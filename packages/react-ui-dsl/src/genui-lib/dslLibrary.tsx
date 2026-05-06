@@ -77,6 +77,7 @@ const DEFAULT_PROMPT_ADDITIONAL_RULES = [
   "MiniChart is a compact single-series trend primitive for KPI cards, table cells, row-local numeric arrays, and dense summaries. Use it only with existing single-series numeric data.",
   "MiniChart always fills the available width. Omit MiniChart height unless the layout needs a tighter or taller trend.",
   "When ScatterChart X values are epoch millisecond timestamps, pass xType='time' as the fourth argument so ECharts formats the X axis as human-readable dates instead of raw numbers.",
+  "GaugeChart auto-scales 0-1 decimal values to 0-100% display. Pass min=0, max=1 for fields like availabilityRate, avgCpuUtil, avgMemUtil (0.0-1.0 ratios) — the component shows them as percentages. Pass min=0, max=100 for values already in percentage form.",
   "When Descriptions will contain 6 or more fields, use columns=2 to prevent visual crowding in the bordered grid. Long string values such as device names, port names, identifiers, and addresses need the extra horizontal space that a 2-column layout provides.",
   "For table columns that contain long string values such as names, identifiers, paths, addresses, or descriptive text, add tooltip: true to the column options. This prevents awkward wrapping and shows the full value on hover.",
 ];
