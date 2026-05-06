@@ -71,6 +71,7 @@ export function mapColumnsToAntd(
       onFilter: options.filterable
         ? (value, record) => String(record[column.field]) === String(value)
         : undefined,
+      ellipsis: options.tooltip ? true : undefined,
       render: (value: unknown, record: TableRow) => {
         if (typeof options.cell === "function") {
           return options.cell(value, record);
@@ -84,7 +85,16 @@ export function mapColumnsToAntd(
         if (options.tooltip) {
           return (
             <Tooltip title={text}>
-              <span>{text}</span>
+              <span
+                style={{
+                  display: "block",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {text}
+              </span>
             </Tooltip>
           );
         }
