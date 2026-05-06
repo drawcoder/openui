@@ -8,7 +8,8 @@ import { ScatterChartView } from "./view";
 export const ScatterChart = defineComponent({
   name: "ScatterChart",
   props: ScatterChartSchema,
-  description: "Scatter points; use for correlations like latency vs packet loss or throughput vs error rate",
+  description:
+    "Scatter points; use for correlations like latency vs packet loss or throughput vs error rate. Pass xType='time' when X values are epoch millisecond timestamps to enable automatic date axis formatting.",
   component: ({ props }: ComponentRenderProps<z.infer<typeof ScatterChartSchema>>) => (
     <ScatterChartView {...props} />
   ),
