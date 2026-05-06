@@ -43,7 +43,11 @@ export function getCorrectionsPath(runId: string): string {
   return resolve(getRunDir(runId), "corrections.json");
 }
 
-export function createRunWorkspace(runId: string, regen: boolean): RunManifest {
+export function createRunWorkspace(
+  runId: string,
+  regen: boolean,
+  suite: "e2e" | "fuzz" | "benchmark" = "e2e",
+): RunManifest {
   const runDir = getRunDir(runId);
   mkdirSync(runDir, { recursive: true });
   mkdirSync(resolve(runDir, "task-bundle", "screenshots"), { recursive: true });
@@ -57,6 +61,7 @@ export function createRunWorkspace(runId: string, regen: boolean): RunManifest {
     createdAt: now,
     updatedAt: now,
     regen,
+    suite,
     reportDataPath: getReportDataPath(runId),
     taskBundlePath: getTaskBundlePath(runId),
     resultBundlePath: getResultBundlePath(runId),
