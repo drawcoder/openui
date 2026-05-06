@@ -35,7 +35,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const BENCHMARK_DATA_DIR = resolve(__dirname, "fuzz-data/benchmark");
 const BENCHMARK_SNAPSHOTS_DIR = resolve(__dirname, "benchmark-snapshots");
 
-const parser = createParser(dslLibrary.toJSONSchema());
+const parser = createParser(dslLibrary.toJSONSchema(), undefined, { externalRefs: ["data"] });
 
 const benchmarkCases = loadBenchmarkCases(BENCHMARK_DATA_DIR);
 
