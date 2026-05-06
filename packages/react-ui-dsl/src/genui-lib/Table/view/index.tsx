@@ -61,8 +61,10 @@ export function mapColumnsToAntd(
     const column = getColumnProps(columnValue);
     const options = column.options ?? {};
 
+    const dataIndex = column.field.includes(".") ? column.field.split(".") : column.field;
+
     return {
-      dataIndex: column.field,
+      dataIndex,
       filters:
         options.filterable && options.filterOptions
           ? options.filterOptions.map((option) => ({ text: option, value: option }))
