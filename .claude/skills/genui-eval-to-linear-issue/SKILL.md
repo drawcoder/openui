@@ -1,23 +1,12 @@
+name: genui-eval-to-linear-issue
+description: Use when turning GenUI eval, benchmark, e2e, or fuzz findings into new Linear capability issues with required dataModel, generated DSL, and screenshot evidence.
 ---
-name: eval-loop-issue-handoff
-description: Use when turning eval-loop, benchmark, e2e, or fuzz findings into tracker issues. Produces issue bodies with concrete evidence: run id, fixture ids, score breakdowns, failure reasons, screenshot and snapshot paths, full dataModel, DSL excerpts, and measurable acceptance criteria. Works for Codex, Claude Code, and opencode.
----
 
-# Eval-Loop Issue Handoff
+# GenUI Eval To Linear Issue
 
-Use this skill to report eval-loop problems as durable tracker issues. The output must be concrete enough that another agent can reproduce the problem without re-reading the whole run workspace.
+Use this skill to convert GenUI eval findings into durable Linear capability issues. The issue must target a reusable data-shape or rendering capability, not a list of failing fixtures.
 
-This skill is tracker-neutral. It can be used to:
-
-- create Linear issues
-- create GitHub issues
-- create Jira tickets
-- draft markdown for manual submission
-
-Agent-specific starter prompts are available in:
-
-- `agents/claude-code.md`
-- `agents/opencode.md`
+Fixtures are evidence. The fix target is the capability class.
 
 ## When To Use
 
@@ -25,6 +14,7 @@ Agent-specific starter prompts are available in:
 - "Turn benchmark failures into tracker issues"
 - "Write GitHub-style issues for low-scoring fixtures"
 - "Summarize eval findings as actionable backlog items"
+- "Create Linear issues from GenUI eval failures"
 
 ## Do Not Use For
 
@@ -32,16 +22,25 @@ Agent-specific starter prompts are available in:
 - broad "improve the prompt" issues without a concrete failure mechanism
 - implementation progress updates on an existing issue
 
-Use a tracker-specific handoff skill when you are updating an existing issue rather than creating new ones.
-
 ## Goal
 
 Create issues that are:
 
 - evidence-first
-- mechanism-specific
+- capability-oriented
 - high leverage on overall eval quality or eval reliability
 - readable by humans without local repo context
+- resistant to fixture-specific implementation
+
+## Issue Creation Hard Gate
+
+Do not create a GenUI capability issue unless each primary evidence fixture includes all three artifact types below:
+
+- `dataModel`
+- generated DSL
+- screenshot evidence
+
+If any of these are missing, stop and record which artifact is missing. Do not create an issue that appears complete while omitting one of the required evidence artifacts.
 
 ## Triage Rules
 
@@ -98,19 +97,22 @@ Read [references/evidence-checklist.md](references/evidence-checklist.md) before
 
 ## Snapshot And Screenshot Rules
 
-These are mandatory unless the source artifact truly does not exist.
+These are mandatory unless the source artifact truly does not exist, and they are part of the issue creation hard gate.
 
-- Always include the screenshot path from the current eval run when present.
+- Always include the screenshot from the current eval run when present.
 - Always include the snapshot path for each representative fixture.
-- If the tracker supports file upload, attach the screenshot in addition to keeping the path in the body.
+- For Linear, upload screenshots through `linear-evidence-upload` using the official `fileUpload` presigned URL flow and embed `![fixture-id](assetUrl)` in the issue body.
+- Do not use MCP base64 attachments for eval screenshots.
 - Be explicit about suite-specific snapshot location:
   - `src/__tests__/e2e/snapshots/<fixture>.dsl`
   - `src/__tests__/e2e/fuzz-snapshots/<fixture>.dsl`
   - `src/__tests__/e2e/benchmark-snapshots/<fixture>.dsl`
 
+Read [references/linear-screenshot-upload.md](references/linear-screenshot-upload.md) before creating Linear issues with screenshots.
+
 ## dataModel Rules
 
-The issue body must include the fixture `dataModel`.
+The issue body must include the fixture `dataModel` for every primary evidence fixture.
 
 - Default: include the full `dataModel` in a fenced `json` block.
 - If the model is extremely large, include the most relevant excerpt inline and the full source path in the same issue.
@@ -128,26 +130,26 @@ Do not paste the entire generated DSL unless the entire file is necessary.
 ## Workflow
 
 1. Identify candidate issues from `issues-map.md`, `report-data.json`, `summary.md`, and `failing-patterns.json`.
-2. Group fixtures by failure mechanism, not by visual theme.
+2. Group fixtures by reusable capability class, data shape, or rendering behavior, not by visual theme or judge dimension alone.
 3. Decide whether the issue is worth raising using the triage rules above.
-4. Collect required evidence for 1-3 representative fixtures.
+4. Collect required evidence for 2-5 representative fixtures.
+5. Verify that each primary evidence fixture has `dataModel`, generated DSL, and screenshot evidence before issue creation.
 5. Load [references/issue-template.md](references/issue-template.md) and fill it in.
-6. Make sure the issue explains why fixing it should improve overall eval quality or eval reliability.
-7. Submit the issue to the tracker, or output ready-to-paste markdown if no tracker tool is available.
+6. Make sure the title states the capability being generalized, not the affected fixtures.
+7. Make sure the issue explains why fixing it should improve overall eval quality or eval reliability.
+8. Include a Generalization Gate so the implementation agent must explain anti-overfit evidence.
+9. Submit the issue to Linear, or output ready-to-paste markdown if no tracker tool is available.
 
 ## Required Issue Structure
 
 Every issue should contain these sections:
 
-- `Summary`
-- `Why This Matters`
-- `Reproduction`
-- `Current Behavior`
-- `Expected Behavior`
-- `Evidence`
-- `Proposed Scope`
-- `Acceptance Criteria`
-- `References`
+- `Source Eval Run`
+- `Capability Goal`
+- `Problem Class`
+- `Evidence Fixtures`
+- `Required Fix Shape`
+- `Generalization Gate`
 
 Use the exact structure from [references/issue-template.md](references/issue-template.md).
 
@@ -156,14 +158,16 @@ Use the exact structure from [references/issue-template.md](references/issue-tem
 Before submitting, verify all of the following:
 
 - Another agent could reproduce the problem from the issue alone.
-- The issue contains run id, fixture id, screenshot path, snapshot path, and `dataModel`.
-- The issue is scoped to one failure mechanism.
-- Acceptance criteria are measurable against a future eval run.
-- The issue explains why it is worth doing beyond a single fixture.
+- The issue contains run id, fixture ids, score breakdowns, `dataModel`, generated DSL, and screenshots.
+- Linear screenshots use `fileUpload` asset URLs when Linear upload is available.
+- The issue is scoped to one capability class.
+- Acceptance criteria require a reusable rule or behavior, not a fixture-specific patch.
+- The issue forbids fixture ids, sample-specific constants, snapshot edits, and listed-fixture-only branches in source changes.
+- The issue explains why it is worth doing beyond the listed fixtures.
 
 ## Tracker Notes
 
-This skill is agent-neutral and tracker-neutral.
+This skill is optimized for Linear. For other trackers, preserve the same issue structure and evidence requirements, but adapt screenshot upload mechanics.
 
 - Codex: use the available tracker tool or raw API.
 - Claude Code: use the available tracker integration or output markdown.
@@ -176,3 +180,4 @@ If there is a tracker-specific skill for state/project/workpad behavior, combine
 - [references/issue-template.md](references/issue-template.md)
 - [references/evidence-checklist.md](references/evidence-checklist.md)
 - [references/triage-rules.md](references/triage-rules.md)
+- [references/linear-screenshot-upload.md](references/linear-screenshot-upload.md)
