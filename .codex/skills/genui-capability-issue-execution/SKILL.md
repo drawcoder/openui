@@ -31,9 +31,14 @@ Do not rely on a separate Linear workflow skill to finish the issue. This skill 
    - primary evidence fixtures to inspect
 4. Inspect the issue-provided `dataModel`, generated DSL, screenshots, and local source.
 5. Implement the smallest reusable fix that addresses the capability class.
-6. Run the normal validation for the touched area and eval verification when practical.
-7. If local validation screenshots exist, call `linear-evidence-upload` and embed the result, or record the upload failure precisely.
-8. Update Linear with Generalization Evidence using [references/completion-template.md](references/completion-template.md).
+6. Run the normal validation for the touched area.
+7. **Mandatory eval verification** for any prompt-layer, component, runtime, or schema change that could plausibly affect a fixture's rendered DSL. Run via the `react-ui-dsl-genui-eval-loop` skill — do NOT hand-roll a Playwright/render harness; `pnpm eval start` already regen + render + screenshots in one pipeline.
+   - Pick the suite that owns the fixture (e2e / fuzz / benchmark). The fixture lives under `*-snapshots/<id>.dsl`; the suite name matches the directory prefix. Wrong `--suite` makes vitest skip everything.
+   - Canonical command: `pnpm eval start --suite <suite> --regen --fixture <id>`.
+   - Wait for the run to exit cleanly (process exit 0; ignore the noisy antd `use client` bundler warnings — they are not failures). Confirm BOTH `runs/<run-id>/report-data.json` AND `runs/<run-id>/task-bundle/screenshots/<id>.png` exist before treating the run as complete. Do not peek at the screenshots dir mid-run; it is created early but populated last.
+   - Skipping this step is only acceptable if the change is provably unable to influence DSL output (e.g., a docs-only edit) — and that reason must be written into the workpad.
+8. **Mandatory screenshot upload**: every primary evidence fixture mentioned in the issue must have the screenshot at `runs/<run-id>/task-bundle/screenshots/<fixture>.png` uploaded via the `linear-evidence-upload` skill and embedded as a Markdown image in the workpad's Validation / Eval Evidence section. If multiple fixtures are listed, upload one screenshot per fixture. The before/after pair (issue's hosted screenshot vs. the newly uploaded one) must both be visible in the workpad.
+9. Update Linear with Generalization Evidence using [references/completion-template.md](references/completion-template.md).
 
 ## Workpad Shape
 
@@ -79,9 +84,13 @@ You may finish only in one of these states:
 
 - validation commands recorded
 - current `## Codex Workpad`
-- validation screenshots uploaded when they exist, or upload failure explicitly recorded
+- **eval regen executed for the primary evidence fixture(s)** — run id, fixture id(s), and outcome recorded in the workpad
+- **fresh validation screenshot(s) uploaded via `linear-evidence-upload` and embedded as Markdown images** in the workpad — one per primary evidence fixture, paired with the issue's original (broken) screenshot for visible before/after comparison; or, if regen is provably non-applicable, that reasoning is recorded
+- upload failure explicitly recorded (local path, retry result, failure summary) when an upload could not complete
 - PR linked when applicable
 - state advanced only after the completion bar is satisfied
+
+A "validation passed via unit tests only" closeout is NOT acceptable for prompt/component/runtime/schema changes. Unit tests verify the source did not break; only the regenerated DSL + screenshot demonstrates the issue's visible defect is fixed.
 
 If upload fails, record:
 
@@ -99,6 +108,7 @@ Do not leave the workpad looking screenshot-complete when upload failed.
 - Do not add branches that only match listed fixtures or their business-specific names.
 - Do not claim generalization from score improvement alone.
 - Do not move the issue to review until Generalization Evidence is complete.
+- Do not close out a prompt/component/runtime/schema fix without rerunning the eval and uploading the regenerated screenshot. "Tests pass" is not validation that the visible defect is gone.
 
 ## Fix Layer Selection
 

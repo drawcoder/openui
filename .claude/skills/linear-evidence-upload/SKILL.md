@@ -15,17 +15,64 @@ Use it only when:
 
 This skill does not decide whether an image should be uploaded. It only performs the upload contract and reports success or failure.
 
-Do not use MCP base64 attachment helpers for this workflow. Use Linear's official `fileUpload` presigned URL flow only.
+## Critical: Do NOT Use Local Paths in Markdown
 
-## Contract
+**Wrong approach** (images will NOT display):
+```markdown
+![Evidence](C:\path\to\image.png)
+```
+Linear CLI converts local paths to `uploads.linear.app` URLs which require authentication and fail in Linear Web UI.
 
-Read [references/upload-contract.md](references/upload-contract.md) before uploading.
+**Correct approach** (images display correctly):
+1. Upload via `linear issue attach` to get a **public URL** (`public.linear.app`)
+2. Embed the public URL in Markdown
+
+## Workflow
+
+Read [references/upload-contract.md](references/upload-contract.md) for the full contract.
+
+### Step 1: Upload Image
+
+```bash
+linear issue attach <issue-id> <local-image-path> --title "Evidence"
+```
+
+This outputs a public URL like:
+```
+https://public.linear.app/<workspace-id>/<asset-id>/<file-id>
+```
+
+### Step 2: Return Results
 
 Return one of:
 
-- upload success with `assetUrl`, Markdown image snippet, and upload metadata
-- upload failure with local path, retry result, and failure summary
+**Success:**
+```
+✓ Upload succeeded
+  - localPath: <original-local-path>
+  - assetUrl: https://public.linear.app/...
+  - markdown: ![<title>](https://public.linear.app/...)
+```
 
-If `LINEAR_API_KEY` is not available in the current shell environment, stop and report that the key is missing. In normal setups this key is usually exported as a global zsh environment variable and inherited by the shell that launches Codex.
+**Failure:**
+```
+✗ Upload failed
+  - localPath: <original-local-path>
+  - attempts: 3
+  - error: <final-error-message>
+```
 
-Never silently swallow a failed upload.
+## Prerequisites
+
+- `LINEAR_API_KEY` must be available in environment
+- `linear` CLI must be installed and authenticated
+- Local image path must exist before upload
+
+If `LINEAR_API_KEY` is missing, stop and report: `"LINEAR_API_KEY not available. Upload aborted."`
+
+## Do Not
+
+- **Do NOT** write `![](<local-path>)` in Markdown — images will not display
+- **Do NOT** use MCP base64 attachment helpers — use Linear CLI `attach` command
+- **Do NOT** silently proceed if API key is missing
+- **Do NOT** swallow upload failures without reporting

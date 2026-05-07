@@ -51,12 +51,34 @@ All commands run from `packages/react-ui-dsl`.
 ### Start a run
 
 ```bash
-pnpm eval start                          # all e2e fixtures
-pnpm eval start --suite fuzz             # all fuzz fixtures
-pnpm eval start --fixture table-basic    # single fixture (vitest -t pattern)
-pnpm eval start --fixture "table|card"   # regex — multiple fixtures
-pnpm eval start --regen                  # regenerate DSL snapshots first
+pnpm eval start                                      # all e2e fixtures
+pnpm eval start --suite fuzz                         # all fuzz fixtures
+pnpm eval start --suite benchmark                    # benchmark fixtures (dsl-benchmark.test.tsx)
+pnpm eval start --fixture table-basic                # single fixture (vitest -t pattern)
+pnpm eval start --fixture "table|card"               # regex — multiple fixtures
+pnpm eval start --regen                              # regenerate DSL snapshots first
+pnpm eval start --suite benchmark --regen --fixture <id>   # canonical "verify my fix" call
 ```
+
+Pick the suite that owns the fixture: e2e fixtures live under `snapshots/`, fuzz under `fuzz-snapshots/`, benchmark under `benchmark-snapshots/`. Wrong `--suite` → vitest skips every test and the run dir stays empty.
+
+### What `eval start` actually does
+
+Each run executes this pipeline end-to-end inside `runs/<run-id>/`:
+
+1. Spawns vitest on the matching suite file (regenerating DSL snapshots if `--regen` is set, which calls the configured LLM with the current prompt).
+2. Writes `report-data.json` with the rendered fixture output.
+3. Builds the React `report-app` via vite into the run dir (`index.html` + `assets/`).
+4. Launches headless Chromium via Playwright, opens the built report, and **screenshots each fixture's `.preview-shell` to `task-bundle/screenshots/<fixture-id>.png`**.
+5. Optionally runs the judge for scores + failing patterns.
+
+You do **not** need to write your own Playwright/render harness. The screenshot file is the canonical visual evidence.
+
+### Reading run output
+
+- The vitest+vite logs are noisy with `Module level directives cause errors when bundled, "use client" in ...antd...` warnings — those are harmless. Look for the final `Run <id> complete` line and the process exit code.
+- Confirm the run finished by checking that **both** `runs/<run-id>/report-data.json` and `runs/<run-id>/task-bundle/screenshots/<fixture-id>.png` exist. If only the run dir + `run.json` exist, the pipeline halted before screenshot capture — read the logs for the actual error.
+- Do **not** check `screenshots/` mid-run; the dir is created early but populated only at step 4. Wait for exit before inspecting.
 
 Creates `src/__tests__/e2e/eval/runs/<run-id>/` and prints:
 
