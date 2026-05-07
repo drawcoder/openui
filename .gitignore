@@ -20,6 +20,9 @@
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# opecode
+.sisyphus/
+
 # Cursor
 .cursor/plans
 .cursor/agents
