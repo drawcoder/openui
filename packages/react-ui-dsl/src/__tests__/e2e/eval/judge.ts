@@ -131,3 +131,23 @@ export async function judgeFixtures(
   }
   return results;
 }
+
+export function makeFailedFixtureScore(
+  fixtureId: string,
+  screenshotPath: string | null,
+  failureReason: string | undefined,
+): JudgeScore {
+  const reason = failureReason?.trim() ? failureReason.trim() : "parse or render failure";
+  return {
+    fixtureId,
+    component_fit: 0,
+    data_completeness: 0,
+    format_quality: 0,
+    layout_coherence: 0,
+    overall: 0,
+    feedback: `[benchmark gate] ${reason}`,
+    visual_issues: [],
+    screenshotPath,
+    degraded: false,
+  };
+}

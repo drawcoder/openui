@@ -9,8 +9,32 @@ vi.mock("./judge-runner.ts", () => ({
   resolveRunnerType: vi.fn(() => "codex"),
 }));
 
-import { judgeFixture } from "./judge.ts";
+import { judgeFixture, makeFailedFixtureScore } from "./judge.ts";
 import { DEFAULT_RUBRIC, buildJudgeSystemPrompt } from "./rubric.ts";
+
+describe("makeFailedFixtureScore", () => {
+  it("synthesizes a zero score with the failure reason in feedback", () => {
+    const score = makeFailedFixtureScore("paginated-list", "/tmp/shot.png", "expected 0 errors but got 5");
+    expect(score).toEqual({
+      fixtureId: "paginated-list",
+      component_fit: 0,
+      data_completeness: 0,
+      format_quality: 0,
+      layout_coherence: 0,
+      overall: 0,
+      feedback: "[benchmark gate] expected 0 errors but got 5",
+      visual_issues: [],
+      screenshotPath: "/tmp/shot.png",
+      degraded: false,
+    });
+  });
+
+  it("falls back to a generic feedback string when no reason is provided", () => {
+    const score = makeFailedFixtureScore("schema-x", null, undefined);
+    expect(score.feedback).toBe("[benchmark gate] parse or render failure");
+    expect(score.screenshotPath).toBeNull();
+  });
+});
 
 describe("buildJudgeSystemPrompt", () => {
   it("documents visual issue diagnostics and screenshot-based layout penalties", () => {

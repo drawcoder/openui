@@ -48,6 +48,7 @@ const DEFAULT_PROMPT_ADDITIONAL_RULES = [
   "Never hardcode data values from the data model. Always reference fields via data paths or derived variables.",
   "For paginated envelopes with total/pageSize/pageIndex plus a list/items/rows array, show the pagination metadata with Descriptions and render the array with Table. Do not add previous/next Button controls unless the data source includes an explicit Query, binding, or Action that can change pages.",
   "For positional tuple arrays such as `[timestamp, value]`, project the needed tuple index before formatting; for example use `@Each(data.samples, \"item\", @FormatDate(item[0], \"dateTime\"))` for labels and `@Each(data.samples, \"item\", item[1])` for values.",
+  "When a multi-series LineChart's series are produced by partitioning a flat array (for example via `@Filter` or `@GroupBy` over an entity field), derive the labels axis from one of those partitioned slices, never from the unpartitioned source array. LineChart aligns each series's values to the labels by index, so the labels array length must equal each series's values length. An unpartitioned source that interleaves samples for multiple entities has length N × entityCount while each filtered series has only N values, which leaves the right side of the chart blank. If per-entity timestamps do not align across slices, prefer ScatterChart with Point pairs (or one LineChart per entity) so each series carries its own x-axis.",
   "Byte-count fields such as `bytes`, `*Bytes`, `inBytes`, `outBytes`, `totalBytes`, `usedBytes`, or rows with `unit: \"bytes\"` should display through `@FormatBytes` instead of raw integers.",
   "Rate fields such as `bandwidth`, `bps`, `bitrate`, or `bitsPerSecond` are throughput/capacity rates, not byte counts. Do not use `@FormatBytes` for them; format bits-per-second values as Mbps or Gbps with `@FormatNumber` and a unit suffix.",
   "Do not compute utilization percentages by dividing cumulative byte totals by bandwidth or bitrate fields unless the data provides a matching time window or already exposes utilization as a ratio.",
@@ -131,6 +132,13 @@ ne01Series = Series(data.statistics[0].deviceName + " " + data.statistics[0].sho
 ne02Series = Series(data.statistics[1].deviceName + " " + data.statistics[1].showName, ne02Rows.PeakBandwidthUtilization)
 timeLabels = @FormatDate(ne01Rows.time, "YYYY-MM-DD HH:mm")
 trendChart = LineChart(timeLabels, [ne01Series, ne02Series], "smooth", "Time", "Peak Bandwidth Utilization (%)")`,
+  `root = VLayout([trendChart])
+groupASlice = @Filter(data.records, "groupKey", "==", "group-a")
+groupBSlice = @Filter(data.records, "groupKey", "==", "group-b")
+trendLabels = @FormatDate(groupASlice.timestamp, "dateTime")
+groupASeries = Series("Group A", groupASlice.value)
+groupBSeries = Series("Group B", groupBSlice.value)
+trendChart = LineChart(trendLabels, [groupASeries, groupBSeries], "smooth", "Time", "Value")`,
   `root = VLayout([rawRowsTitle, rawRowsTable])
 rawRowsTitle = Text("Bandwidth Utilization Records", "large")
 rawRowsTable = Table([deviceCol, interfaceCol, timeCol, utilizationCol], data.rows)

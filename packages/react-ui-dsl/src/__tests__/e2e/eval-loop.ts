@@ -16,7 +16,8 @@ import {
   updateRunState,
 } from "./eval/run-manifest.ts";
 import { captureFixtureScreenshots } from "./eval/screenshot.ts";
-import { judgeFixtures } from "./eval/judge.ts";
+import { judgeFixtures, makeFailedFixtureScore } from "./eval/judge.ts";
+import type { JudgeScore } from "./eval/types.ts";
 import { aggregateFailingPatterns, computeOverallScore } from "./eval/failing-patterns.ts";
 import { writeTaskBundle } from "./eval/task-bundle-writer.ts";
 import { readResultBundle, hasResultBundle, ResultBundleError } from "./eval/result-bundle-reader.ts";
@@ -213,22 +214,32 @@ async function runEval(runId: string, regen: boolean, suite: EvalSuite = "e2e", 
     degraded = d;
 
     console.log(`[eval] Judging fixtures…`);
-    const judgeInputs = results.map((r) => {
+    const judgeInputs: { fixtureId: string; dsl: string; dataModel: Record<string, unknown>; screenshotPath: string | null; evalHints?: string[] }[] = [];
+    const failedScores: JudgeScore[] = [];
+    for (const r of results) {
       const entry = reportData.entries.find((e) => e.id === r.fixtureId)!;
+      if (entry.status === "failed") {
+        failedScores.push(makeFailedFixtureScore(r.fixtureId, r.screenshotPath, entry.failureReason));
+        continue;
+      }
       const snapshotPath = resolve(snapshotsDirForSuite(suite), `${r.fixtureId}.dsl`);
       const dsl = existsSync(snapshotPath) ? readFileSync(snapshotPath, "utf-8") : entry.dsl ?? "";
-      return {
+      judgeInputs.push({
         fixtureId: r.fixtureId,
         dsl,
         dataModel: entry.dataModel,
         screenshotPath: r.screenshotPath,
         evalHints: entry.evalHints,
-      };
-    });
+      });
+    }
+    if (failedScores.length > 0) {
+      console.log(`[eval] Skipping judge for ${failedScores.length} failed fixture(s); assigning 0 score.`);
+    }
 
-    const judgeScores = await judgeFixtures(judgeInputs, (done, total) =>
+    const liveScores = await judgeFixtures(judgeInputs, (done, total) =>
       process.stdout.write(`\r  ${done}/${total}`),
     );
+    const judgeScores: JudgeScore[] = [...liveScores, ...failedScores];
     console.log();
 
     const failingPatterns = aggregateFailingPatterns(judgeScores);
@@ -427,16 +438,26 @@ async function cmdVerify(argv: string[]): Promise<void> {
 
   console.log(`[verify] Judging all fixtures…`);
   const snapshotsDir = snapshotsDirForSuite((manifest.suite ?? "e2e") as EvalSuite);
-  const judgeInputs = results.map((r) => {
+  const verifyJudgeInputs: { fixtureId: string; dsl: string; dataModel: Record<string, unknown>; screenshotPath: string | null }[] = [];
+  const verifyFailedScores: JudgeScore[] = [];
+  for (const r of results) {
     const entry = verifyReportData.entries.find((e) => e.id === r.fixtureId)!;
+    if (entry.status === "failed") {
+      verifyFailedScores.push(makeFailedFixtureScore(r.fixtureId, r.screenshotPath, entry.failureReason));
+      continue;
+    }
     const snapshotPath = resolve(snapshotsDir, `${r.fixtureId}.dsl`);
     const dsl = existsSync(snapshotPath) ? readFileSync(snapshotPath, "utf-8") : entry.dsl ?? "";
-    return { fixtureId: r.fixtureId, dsl, dataModel: entry.dataModel, screenshotPath: r.screenshotPath };
-  });
+    verifyJudgeInputs.push({ fixtureId: r.fixtureId, dsl, dataModel: entry.dataModel, screenshotPath: r.screenshotPath });
+  }
+  if (verifyFailedScores.length > 0) {
+    console.log(`[verify] Skipping judge for ${verifyFailedScores.length} failed fixture(s); assigning 0 score.`);
+  }
 
-  const currentScores = await judgeFixtures(judgeInputs, (done, total) =>
+  const liveVerifyScores = await judgeFixtures(verifyJudgeInputs, (done, total) =>
     process.stdout.write(`\r  ${done}/${total}`),
   );
+  const currentScores: JudgeScore[] = [...liveVerifyScores, ...verifyFailedScores];
   console.log();
 
   const deltaResult = computeDelta({ baselineScores, currentScores });
