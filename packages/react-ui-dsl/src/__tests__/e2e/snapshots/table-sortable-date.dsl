@@ -1,5 +1,5 @@
 root = VLayout([employeeTable])
 employeeTable = Table([nameCol, salaryCol, joinedCol], data.employees)
-nameCol = Col("Name", "name")
+nameCol = Col("Name", "name", {tooltip: true})
 salaryCol = Col("Salary", "salary", {sortable: true})
-joinedCol = Col("Joined", "joinedAt", {cell: @Render("v", Text(@FormatDate(v, "date")))})
+joinedCol = Col("Joined", "joinedAt", {cell: @Render("v", "row", Text(@FormatDate(row.joinedAt, "date")))})

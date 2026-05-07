@@ -1,2 +1,4 @@
 root = VLayout([actionList])
-actionList = List(@Each(data.list.items, "item", Text(item)), data.list.title)
+actionList = List([item1, item2], data.list.title)
+item1 = Text(data.list.items[0])
+item2 = Text(data.list.items[1])

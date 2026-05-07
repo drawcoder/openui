@@ -1,3 +1,3 @@
-root = VLayout([title, gauge])
+root = VLayout([title, gaugeChart])
 title = Text("System Health Score", "large")
-gauge = GaugeChart(data.readings, 0, 100)
+gaugeChart = GaugeChart(data.readings, 0, 100)

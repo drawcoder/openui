@@ -1,5 +1,3 @@
 root = VLayout([header, radarChart])
-header = Text("Router Health Metrics Comparison", "large")
-radarChart = RadarChart(data.labels, [routerASeries, routerBSeries])
-routerASeries = Series(data.series[0].category, data.series[0].values)
-routerBSeries = Series(data.series[1].category, data.series[1].values)
+header = Text("Device Health Metrics Comparison", "large")
+radarChart = RadarChart(data.labels, data.series)
