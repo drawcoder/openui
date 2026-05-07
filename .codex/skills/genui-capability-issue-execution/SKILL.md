@@ -1,3 +1,4 @@
+---
 name: genui-capability-issue-execution
 description: Use when implementing, validating, or closing out an existing GenUI Linear capability issue.
 ---
