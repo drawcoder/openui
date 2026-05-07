@@ -112,11 +112,12 @@ export const Descriptions = defineComponent({
     );
 
     const extra = isElementNode(props.extra) ? renderNode(props.extra) : props.extra;
+    const effectiveColumns = props.columns ?? (normalizedItems.length >= 8 ? 2 : undefined);
 
     return (
       <DescriptionsRuntimeView
         border={props.border}
-        columns={props.columns}
+        columns={effectiveColumns}
         extra={extra}
         items={normalizedItems}
         renderValue={(field, resolvedSpan) => resolveDescriptionFieldValue(field, renderNode, resolvedSpan)}

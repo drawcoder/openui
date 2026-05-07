@@ -1,4 +1,2 @@
 root = VLayout([actionList])
-actionList = List([reviewItem, roadmapItem], "Action Items", false)
-reviewItem = Text("Review Q1 financials")
-roadmapItem = Text("Update product roadmap")
+actionList = List(@Each(data.list.items, "item", Text(item)), data.list.title)

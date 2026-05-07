@@ -76,6 +76,11 @@ const DEFAULT_PROMPT_ADDITIONAL_RULES = [
   "If the data model only contains raw row records, prefer Table or Descriptions instead of fabricating chart props.",
   "MiniChart is a compact single-series trend primitive for KPI cards, table cells, row-local numeric arrays, and dense summaries. Use it only with existing single-series numeric data.",
   "MiniChart always fills the available width. Omit MiniChart height unless the layout needs a tighter or taller trend.",
+  "When ScatterChart X values are epoch millisecond timestamps, pass xType='time' as the fourth argument so ECharts formats the X axis as human-readable dates instead of raw numbers.",
+  "For boolean fields (active, enabled, status), use a ternary instead of @Switch: `v ? Tag('Active', 'success') : Tag('Inactive', 'danger')`. @Switch matches string keys so {true: ...} keys do not match boolean values.",
+  "GaugeChart auto-scales 0-1 decimal values to 0-100% display. Pass min=0, max=1 for fields like availabilityRate, avgCpuUtil, avgMemUtil (0.0-1.0 ratios) — the component shows them as percentages. Pass min=0, max=100 for values already in percentage form.",
+  "When Descriptions will contain 6 or more fields, use columns=2 to prevent visual crowding in the bordered grid. Long string values such as device names, port names, identifiers, and addresses need the extra horizontal space that a 2-column layout provides.",
+  "For table columns that contain long string values such as names, identifiers, paths, addresses, or descriptive text, add tooltip: true to the column options. This prevents awkward wrapping and shows the full value on hover.",
 ];
 
 const DEFAULT_PROMPT_EXAMPLES = [
@@ -153,6 +158,21 @@ measurementsTitle = Text("Measurements", "large")
 measurementsChart = MiniChart("bar", data.summary.measurements, 96)`,
   `root = VLayout([recordDetail])
 recordDetail = Descriptions([DescField("ID", data.record.id ?? "No data"), DescField("Name", data.record.name ?? "No data"), DescField("File", data.record.file ?? "No data"), DescField("Status", data.record.status ?? "No data"), DescField("Metric", data.record.metric ?? "No data")], "Record")`,
+  `root = VLayout([linkDetail])
+linkDetail = Descriptions([aEndDeviceField, zEndDeviceField, aEndPortField, zEndPortField, aEndIPv4Field, zEndIPv4Field, bandwidthField, linkNameField], "Link Details", null, 2)
+aEndDeviceField = DescField("A-End Device", data.refAEndNEName)
+zEndDeviceField = DescField("Z-End Device", data.refZEndNEName)
+aEndPortField = DescField("A-End Port", data.aEndPortName)
+zEndPortField = DescField("Z-End Port", data.zEndPortName)
+aEndIPv4Field = DescField("A-End IPv4", data.aEndPortIPv4Address)
+zEndIPv4Field = DescField("Z-End IPv4", data.zEndPortIPv4Address)
+bandwidthField = DescField("Bandwidth", @FormatNumber(data.bandwidth / 1000000, 1) + " Mbps")
+linkNameField = DescField("Link Name", data.linkName)`,
+  `root = VLayout([header, linkTable])
+header = Text("Physical Links", "large")
+linkTable = Table([resIdCol, nameCol], data.physicsLinks)
+resIdCol = Col("Resource ID", "linkResId")
+nameCol = Col("Link Name", "linkName", {tooltip: true})`,
 ];
 
 function mergePromptOptions(options?: PromptOptions): PromptOptions {

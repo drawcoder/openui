@@ -271,7 +271,7 @@ async function cmdStart(argv: string[]): Promise<void> {
   const runId = generateRunId();
 
   console.log(`\nStarting eval run ${runId} (suite=${suite})…`);
-  createRunWorkspace(runId, regen);
+  createRunWorkspace(runId, regen, suite);
 
   const reportData = await runEval(runId, regen, suite, fixtureArg);
   const judgeScores = reportData.judge_scores ?? [];
@@ -426,6 +426,7 @@ async function cmdVerify(argv: string[]): Promise<void> {
   await verifyServer.close();
 
   console.log(`[verify] Judging all fixtures…`);
+  const snapshotsDir = snapshotsDirForSuite((manifest.suite ?? "e2e") as EvalSuite);
   const judgeInputs = results.map((r) => {
     const entry = verifyReportData.entries.find((e) => e.id === r.fixtureId)!;
     const snapshotPath = resolve(snapshotsDir, `${r.fixtureId}.dsl`);

@@ -1,3 +1,4 @@
-root = VLayout([header, chart])
+root = VLayout([header, revenueChart])
 header = Text("Monthly Revenue Trend", "large")
-chart = LineChart(data.labels, [data.series[0]], "smooth", "Month", "Revenue (USD)")
+revenueChart = LineChart(data.labels, [revenueSeries], "smooth", "Month", "Revenue ($)")
+revenueSeries = Series("Revenue", data.series[0].values)

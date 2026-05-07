@@ -68,6 +68,7 @@ export interface RunManifest {
   createdAt: string;
   updatedAt: string;
   regen: boolean;
+  suite?: "e2e" | "fuzz" | "benchmark";
   reportDataPath: string;
   taskBundlePath: string;
   resultBundlePath: string;

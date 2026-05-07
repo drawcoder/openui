@@ -61,8 +61,10 @@ export function mapColumnsToAntd(
     const column = getColumnProps(columnValue);
     const options = column.options ?? {};
 
+    const dataIndex = column.field.includes(".") ? column.field.split(".") : column.field;
+
     return {
-      dataIndex: column.field,
+      dataIndex,
       filters:
         options.filterable && options.filterOptions
           ? options.filterOptions.map((option) => ({ text: option, value: option }))
@@ -71,6 +73,7 @@ export function mapColumnsToAntd(
       onFilter: options.filterable
         ? (value, record) => String(record[column.field]) === String(value)
         : undefined,
+      ellipsis: options.tooltip ? true : undefined,
       render: (value: unknown, record: TableRow) => {
         if (typeof options.cell === "function") {
           return options.cell(value, record);
@@ -84,7 +87,16 @@ export function mapColumnsToAntd(
         if (options.tooltip) {
           return (
             <Tooltip title={text}>
-              <span>{text}</span>
+              <span
+                style={{
+                  display: "block",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {text}
+              </span>
             </Tooltip>
           );
         }

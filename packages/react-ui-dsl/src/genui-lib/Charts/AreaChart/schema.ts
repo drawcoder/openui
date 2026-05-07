@@ -7,4 +7,5 @@ export const AreaChartSchema = z.object({
   variant: z.enum(["linear", "smooth", "step"]).optional(),
   xLabel: z.string().optional(),
   yLabel: z.string().optional(),
+  stacked: z.boolean().optional(),
 });

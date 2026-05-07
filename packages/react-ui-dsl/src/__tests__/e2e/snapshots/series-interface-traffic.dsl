@@ -1,5 +1,5 @@
-root = VLayout([chartTitle, trafficChart])
-chartTitle = Text("Interface Traffic (Mbps)", "large")
-trafficChart = BarChart(data.labels, [inboundSeries, outboundSeries], "grouped", "Interface", "Traffic (Mbps)")
+root = VLayout([header, trafficChart])
+header = Text("Interface Traffic (Mbps)", "large")
 inboundSeries = Series(data.series[0].category, data.series[0].values)
 outboundSeries = Series(data.series[1].category, data.series[1].values)
+trafficChart = BarChart(data.labels, [inboundSeries, outboundSeries], "grouped", "Interface", "Traffic (Mbps)")
