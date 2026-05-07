@@ -1,0 +1,5 @@
+root = Table([deviceCol, statusCol], data.devices, @Render("device", Table([ifaceNameCol, ifaceSpeedCol], device.interfaces)))
+deviceCol = Col("设备", "name")
+statusCol = Col("状态", "status")
+ifaceNameCol = Col("接口", "name")
+ifaceSpeedCol = Col("速率", "speed")

@@ -32,12 +32,14 @@ function getColumnProps(column: ColumnValue): ColViewProps {
 export const Table = defineComponent({
   name: "Table",
   props: TableSchema,
-  description: "Data table authored as Table(columns, rows) with Col(title, field, options?).",
+  description:
+    'Data table: Table(columns, rows, expandRow?). Col(title, field, options?) defines each column. For nested array fields, pass @Render("item", Table([childCols], item.nestedField)) as 3rd arg — rows auto-expand when ≤3 parents.',
   component: ({ props, renderNode }: ComponentRenderProps<z.infer<typeof TableSchema>>) => (
     <TableView
       columns={props.columns.map((column: z.infer<typeof ColSchema> | ColumnValue) =>
         getColumnProps(column as ColumnValue),
       )}
+      expandRow={props.expandRow}
       renderNode={renderNode}
       rows={props.rows}
     />

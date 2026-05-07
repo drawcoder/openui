@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createParser } from "../../../../lang-core/src";
 import { dslLibrary } from "../dslLibrary";
 import { mapColumnsToAntd } from "./index";
+import { TableView } from "./view";
 
 function createCol(props: Record<string, unknown>) {
   return {
@@ -149,5 +150,45 @@ rows = [{joinDate: "2026-01-02T03:04:05.000Z"}]`);
     const result = parser.parse(`root = Table({columns: [{title: "Name", field: "name"}]})`);
 
     expect(result.meta.errors.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Table expandRow DSL parsing", () => {
+  it("parses @Render as the 3rd positional argument", () => {
+    const parser = createParser(dslLibrary.toJSONSchema());
+    const result = parser.parse(
+      `root = Table([Col("Device", "name"), Col("Status", "status")], devices, @Render("device", Table([Col("Interface", "name")], device.interfaces)))
+devices = [{name: "Router-A", status: "up", interfaces: [{name: "eth0"}]}]`,
+    );
+
+    expect(result.meta.errors).toHaveLength(0);
+    expect(result.root?.props.expandRow).toBeDefined();
+  });
+});
+
+describe("Table expandRow", () => {
+  const rows = [{ id: 1 }, { id: 2 }];
+
+  it("renders expand chevron and content when expandRow is provided", () => {
+    const expandFn = (record: unknown) => <span>{JSON.stringify(record)}</span>;
+    const view = TableView({ columns: [], rows, expandRow: expandFn });
+
+    expect(view.props.expandable).toBeDefined();
+    expect(typeof view.props.expandable.expandedRowRender).toBe("function");
+    const content = view.props.expandable.expandedRowRender({ id: 1 });
+    expect(content.props.children).toBe(JSON.stringify({ id: 1 }));
+  });
+
+  it("sets defaultExpandAllRows true when rows.length <= 3", () => {
+    const expandFn = () => <span>details</span>;
+    const view = TableView({ columns: [], rows: [{ id: 1 }, { id: 2 }, { id: 3 }], expandRow: expandFn });
+
+    expect(view.props.expandable.defaultExpandAllRows).toBe(true);
+  });
+
+  it("does not add expandable config when expandRow is omitted", () => {
+    const view = TableView({ columns: [], rows });
+
+    expect(view.props.expandable).toBeUndefined();
   });
 });

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { z } from "zod";
 
 export type ColCellRenderer = (value: unknown, record: unknown) => ReactNode;
+export type ExpandRowRenderer = (record: unknown) => ReactNode;
 
 export interface ColOptions {
   sortable?: boolean;
@@ -37,9 +38,16 @@ export const ColSchema: z.ZodType<ColProps> = z
   })
   .strict();
 
-export const TableSchema = z
+export interface TableProps {
+  columns: ColProps[];
+  rows: Record<string, unknown>[];
+  expandRow?: ExpandRowRenderer | ElementNode;
+}
+
+export const TableSchema: z.ZodType<TableProps> = z
   .object({
     columns: z.array(ColSchema),
     rows: z.array(z.record(z.string(), z.any())),
+    expandRow: z.any().optional(),
   })
   .strict();

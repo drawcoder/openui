@@ -136,6 +136,36 @@ export const fixtures: Record<string, Fixture[]> = {
         },
       },
     },
+    {
+      id: "table-expand-row",
+      prompt: "显示设备列表，每行可展开查看其接口列表（包含接口名称和速率）",
+      dataModel: {
+        devices: [
+          {
+            name: "Router-A",
+            status: "Up",
+            interfaces: [
+              { name: "eth0", speed: "1G" },
+              { name: "eth1", speed: "10G" },
+            ],
+          },
+          {
+            name: "Switch-B",
+            status: "Down",
+            interfaces: [{ name: "fa0/1", speed: "100M" }],
+          },
+        ],
+      },
+      assert: {
+        contains: ["Router-A", "Switch-B"],
+        verify: (container) => {
+          expect(
+            container.querySelector(".ant-table-row-expand-icon"),
+            "table-expand-row: expected Ant Design expand icon (.ant-table-row-expand-icon)",
+          ).not.toBeNull();
+        },
+      },
+    },
   ],
   PieChart: [
     {

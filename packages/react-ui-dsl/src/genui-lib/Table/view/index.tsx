@@ -4,7 +4,7 @@ import type { ElementNode } from "@openuidev/react-lang";
 import { Table as AntTable, Tooltip } from "antd";
 import type { ColumnType } from "antd/es/table";
 import type { CSSProperties, ReactNode } from "react";
-import type { ColCellRenderer } from "../schema";
+import type { ColCellRenderer, ExpandRowRenderer } from "../schema";
 
 export function formatCell(value: unknown): string {
   if (value == null) return "";
@@ -113,16 +113,30 @@ export function mapColumnsToAntd(
 
 export type TableViewProps = {
   columns: ColumnValue[];
+  expandRow?: ExpandRowRenderer | ElementNode;
   renderNode?: (value: unknown) => ReactNode;
   rows: TableRow[];
   style?: CSSProperties;
 };
 
-export function TableView({ columns, renderNode, rows, style }: TableViewProps) {
+export function TableView({ columns, expandRow, renderNode, rows, style }: TableViewProps) {
   return (
     <AntTable
       columns={mapColumnsToAntd(columns, renderNode)}
       dataSource={rows}
+      expandable={
+        expandRow
+          ? {
+              defaultExpandAllRows: rows.length <= 3,
+              expandedRowRender: (record) => {
+                if (isElementNode(expandRow)) {
+                  return renderNode ? renderNode(expandRow) : null;
+                }
+                return (expandRow as ExpandRowRenderer)(record);
+              },
+            }
+          : undefined
+      }
       pagination={false}
       rowKey={(_, index) => String(index)}
       size="middle"
