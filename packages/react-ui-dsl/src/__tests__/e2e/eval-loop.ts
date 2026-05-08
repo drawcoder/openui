@@ -486,6 +486,133 @@ async function cmdVerify(argv: string[]): Promise<void> {
   });
 }
 
+async function cmdJudge(argv: string[]): Promise<void> {
+  const runId = argv[0];
+  if (!runId) {
+    console.error("Usage: pnpm eval judge <run-id>");
+    process.exit(1);
+  }
+
+  const manifest = readRunManifest(runId);
+  const reportDir = dirname(getReportDataPath(runId));
+  const reportData = readReportData(reportDir);
+
+  if (!reportData.entries || reportData.entries.length === 0) {
+    console.error(`No fixtures found in run ${runId}`);
+    process.exit(1);
+  }
+
+  const suite: EvalSuite = (manifest.suite as EvalSuite) ?? "e2e";
+  const fixtureIds = reportData.entries.map((e) => e.id);
+  const screenshotsDir = resolve(getTaskBundlePath(runId), "screenshots");
+
+  // Check if screenshots already exist
+  const hasScreenshots = fixtureIds.every((id) =>
+    existsSync(resolve(screenshotsDir, `${id}.png`)),
+  );
+
+  let screenshotResults: { fixtureId: string; screenshotPath: string | null }[];
+
+  if (hasScreenshots) {
+    console.log(`\n[judge] Using existing screenshots from ${screenshotsDir}`);
+    screenshotResults = fixtureIds.map((id) => ({
+      fixtureId: id,
+      screenshotPath: resolve(screenshotsDir, `${id}.png`),
+    }));
+  } else {
+    // Need to capture screenshots first
+    console.log(`\n[judge] Building report app…`);
+    await buildReportApp(reportDir);
+
+    console.log(`[judge] Starting report server for screenshots…`);
+    const server = await startReportServer(reportDir);
+
+    try {
+      console.log(`[judge] Taking ${fixtureIds.length} fixture screenshots…`);
+      const { results } = await captureFixtureScreenshots(
+        { reportUrl: `${server.origin}/index.html`, screenshotsDir, fixtureIds },
+        (done, total) => process.stdout.write(`\r  ${done}/${total}`),
+      );
+      console.log();
+      screenshotResults = results;
+    } finally {
+      await server.close();
+    }
+  }
+
+  // Run judge on all fixtures
+  console.log(`[judge] Judging ${fixtureIds.length} fixtures…`);
+  const judgeInputs: { fixtureId: string; dsl: string; dataModel: Record<string, unknown>; screenshotPath: string | null; evalHints?: string[] }[] = [];
+  const failedScores: JudgeScore[] = [];
+
+  for (const r of screenshotResults) {
+    const entry = reportData.entries.find((e) => e.id === r.fixtureId)!;
+    if (entry.status === "failed") {
+      failedScores.push(makeFailedFixtureScore(r.fixtureId, r.screenshotPath, entry.failureReason));
+      continue;
+    }
+    const snapshotPath = resolve(snapshotsDirForSuite(suite), `${r.fixtureId}.dsl`);
+    const dsl = existsSync(snapshotPath) ? readFileSync(snapshotPath, "utf-8") : entry.dsl ?? "";
+    judgeInputs.push({
+      fixtureId: r.fixtureId,
+      dsl,
+      dataModel: entry.dataModel,
+      screenshotPath: r.screenshotPath,
+      evalHints: entry.evalHints,
+    });
+  }
+
+  if (failedScores.length > 0) {
+    console.log(`[judge] Skipping judge for ${failedScores.length} failed fixture(s); assigning 0 score.`);
+  }
+
+  const liveScores = await judgeFixtures(judgeInputs, (done, total) =>
+    process.stdout.write(`\r  ${done}/${total}`),
+  );
+  const judgeScores: JudgeScore[] = [...liveScores, ...failedScores];
+  console.log();
+
+  // Compute overall score and failing patterns
+  const overallScore = computeOverallScore(judgeScores);
+  const failingPatterns = aggregateFailingPatterns(judgeScores);
+  const judgeMap = new Map(judgeScores.map((s) => [s.fixtureId, s]));
+
+  // Update report data with judge scores
+  const enrichedEntries: E2EReportEntry[] = reportData.entries.map((e) => ({
+    ...e,
+    judgeScore: judgeMap.get(e.id),
+  }));
+
+  const enhanced: E2EReportData = {
+    ...reportData,
+    summary: { ...reportData.summary, overallScore },
+    entries: enrichedEntries,
+    judge_scores: judgeScores,
+    failing_patterns: failingPatterns,
+  };
+
+  writeReportData(reportDir, enhanced);
+
+  // Write task bundle
+  writeTaskBundle({
+    runId,
+    overallScore,
+    judgeScores,
+    failingPatterns,
+    snapshotsDir: snapshotsDirForSuite(suite),
+    pendingPromptCorrections: [],
+  });
+
+  console.log(`\n✓ Judge complete for run ${runId}`);
+  console.log(`  Overall score: ${overallScore.toFixed(1)}/10`);
+  console.log(`  Total fixtures: ${fixtureIds.length}`);
+  console.log(`  Passed: ${reportData.summary.passed ?? fixtureIds.length - failedScores.length}`);
+  console.log(`  Failed: ${failedScores.length}`);
+  if (failingPatterns.length > 0) {
+    console.log(`  Failing patterns: ${failingPatterns.length}`);
+  }
+}
+
 async function cmdCalibrate(argv: string[]): Promise<void> {
   const runId = argv[0];
   if (!runId) {
@@ -554,6 +681,9 @@ async function main(): Promise<void> {
     case "status":
       await cmdStatus(rest);
       break;
+    case "judge":
+      await cmdJudge(rest);
+      break;
     case "verify":
       await cmdVerify(rest);
       break;
@@ -566,6 +696,7 @@ async function main(): Promise<void> {
       console.log("Commands:");
       console.log("  start [--regen]       Run baseline eval and generate task bundle");
       console.log("  status [<run-id>]     Show run status (or list all runs)");
+      console.log("  judge <run-id>        Run judge on existing run (with or without screenshots)");
       console.log("  verify <run-id>       Verify agent result bundle with full re-evaluation");
       console.log("  calibrate <run-id>    Process pending judge corrections");
       process.exit(cmd ? 1 : 0);
