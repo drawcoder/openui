@@ -3,11 +3,13 @@ schema: spec-driven
 # Project context (optional)
 # This is shown to AI when creating artifacts.
 # Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  语言：中文（简体）
+  所有产出物必须用简体中文撰写。
+  
+  Tech stack: TypeScript, React, Next.js, Node.js
+  Domain: Generative UI framework (OpenUI)
+  保持技术术语如 API、REST、GraphQL 等使用英文。
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
