@@ -1,3 +1,7 @@
+> Superseded: This design is abandoned in favor of `prompt-hardening-for-model-migration`.
+>
+> Reason: the replacement design keeps the migration scope focused on shared prompt hardening and generation validation instead of building a broad model-profile system.
+
 ## Context
 
 `react-ui-dsl` 是一个 LLM 驱动的生成式 UI 库。当前 prompt 链路是：

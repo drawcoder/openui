@@ -1,3 +1,7 @@
+> Superseded: This change is abandoned in favor of `prompt-hardening-for-model-migration`.
+>
+> Reason: the earlier scope centered on a broad model-profile/prompt-management system. The replacement change narrows the problem back to the ds-flash/deepseek -> qwen3 migration regression and solves it through shared prompt hardening, thin model invocation options, compact examples, and one-shot parse repair.
+
 ## Why
 
 `@openuidev/react-ui-dsl` 的 system prompt 是历经多轮在 deepseek-v3 上调优堆出来的：800-1000 行的 grammar/builtins/components 描述 + 46 条 `additionalRules` + 19 条静态 few-shot examples，全部无差别地喂给所有模型。
