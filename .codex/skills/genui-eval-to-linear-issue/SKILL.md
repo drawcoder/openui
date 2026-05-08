@@ -1,3 +1,4 @@
+---
 name: genui-eval-to-linear-issue
 description: Use when turning GenUI eval, benchmark, e2e, or fuzz findings into new Linear capability issues with required dataModel, generated DSL, and screenshot evidence.
 ---
