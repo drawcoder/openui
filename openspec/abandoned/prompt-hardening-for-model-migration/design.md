@@ -1,3 +1,7 @@
+> Abandoned: 本 design 已放弃，替代方案为 `react-ui-dsl-prompt-strictness`。
+>
+> 新方案不再引入 legacy/hardened prompt variant、model adapter、data-shape classifier、validation 或 repair。它只处理 React UI DSL prompt 内容重构与 `strictness` 指令强度。
+
 ## Context
 
 `react-ui-dsl` currently builds one large system prompt for all models: language syntax, component signatures, data model, builtins, examples, and 46 additional rules are concatenated in a fixed order. This prompt was tuned through repeated ds-flash/deepseek-style runs, but the migration to `qwen3-30b-a3b-instruct-2507` exposed failures that deepseek tolerated: JavaScript API hallucinations, unbalanced syntax, pseudo-component templates, `@Render` scope mistakes, invented data, and component arity drift.

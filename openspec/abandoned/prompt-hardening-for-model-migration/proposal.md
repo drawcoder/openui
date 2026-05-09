@@ -1,3 +1,7 @@
+> Abandoned: 本 change 已放弃，替代方案为 `react-ui-dsl-prompt-strictness`。
+>
+> 原因：旧方案范围过大，把 prompt hardening、legacy/hardened variant、模型调用参数、data-shape selection、validation 和 self-repair 混在一起。新的 change 收窄为 prompt-only：先重构 React UI DSL standard prompt，再通过 `strictness` 支持 qwen3 等迁移调优场景。
+
 ## Why
 
 Switching the `react-ui-dsl` generation benchmark from ds-flash/deepseek-style behavior to `qwen3-30b-a3b-instruct-2507` exposed a large quality regression: parse failures increased and semantic judge scores dropped even though many violated constraints already existed in the prompt.
