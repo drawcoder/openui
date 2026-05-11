@@ -34,6 +34,8 @@ LLM_JUDGE_MODEL=gpt-4o
 
 Override the judge model at any time with `LLM_JUDGE_MODEL=<model>`.
 
+**Judge concurrency.** Judging runs in a bounded worker pool, default 6 fixtures in parallel. Override with `EVAL_JUDGE_CONCURRENCY=<n>` — lower it (e.g. 3) when an upstream API rate-limits, raise it for local CLIs that can fan out. A 44-fixture benchmark judge step finishes in ~`(44 / concurrency) × per-fixture-latency`, so concurrency=6 keeps the full pipeline (regen + screenshot + judge) under the 10-min Bash ceiling for typical hosted judge models.
+
 ## Typical Iteration Cycle
 
 ```
@@ -112,6 +114,17 @@ Verification complete for run 20260425_181234_ab12
   Score: 6.4 → 7.8 (+1.4)
   Outcome: SUCCESS
 ```
+
+### Re-run judge on an existing run
+
+```bash
+pnpm eval judge <run-id>
+```
+
+Re-runs the judge step against an existing run's `report-data.json` and reuses screenshots from `task-bundle/screenshots/` when they exist; otherwise it rebuilds the report app and re-captures them. Use this when:
+
+- `eval start --regen` finished regen + screenshot but the judge step was killed (timeout, OOM, etc.) — no need to redo regen.
+- You changed the rubric / strict rules and want to re-score an old run without regenerating DSL.
 
 ### Calibrate the judge (optional)
 

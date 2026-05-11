@@ -106,6 +106,8 @@ LLM_BASE_URL=https://api.openai.com/v1
 LLM_JUDGE_MODEL=gpt-4o
 ```
 
+**Judge concurrency.** The judge step runs fixtures through a bounded worker pool — default 6 in parallel. Override with `EVAL_JUDGE_CONCURRENCY=<n>` if the upstream API rate-limits or you want to push harder. With 6 in parallel, a 44-fixture benchmark judge step finishes in roughly `(44 / 6) × per-fixture-latency` instead of `44 × per-fixture-latency`.
+
 ### Typical iteration cycle
 
 ```
@@ -164,6 +166,16 @@ change-summary.md                 ← what changed and why
 touched-files.json                ← ["packages/react-ui-dsl/src/..."]
 claimed-affected-fixtures.json    ← ["table-basic", ...]
 ```
+
+#### Re-run judge on an existing run
+
+If `pnpm eval start --regen` succeeded in producing `report-data.json` + screenshots but the judge step was killed (timeout, crash, etc.), you don't need to re-run the whole pipeline:
+
+```bash
+pnpm eval judge <run-id>
+```
+
+Reuses existing screenshots when present, otherwise re-captures them. Useful when iterating on rubric prompts or recovering from a partial run.
 
 #### 5. Verify
 

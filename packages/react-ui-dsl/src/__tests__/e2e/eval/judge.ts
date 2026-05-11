@@ -120,15 +120,38 @@ export async function judgeFixture(input: JudgeInput): Promise<JudgeScore> {
   };
 }
 
+// Bounded-concurrency pool. Default 6 keeps a benchmark of ~44 fixtures under
+// the Bash 10-min ceiling (~4 min at 30s/fixture). Override with
+// EVAL_JUDGE_CONCURRENCY when an upstream API rate-limits or a host is weak.
+function resolveConcurrency(totalInputs: number): number {
+  const raw = process.env["EVAL_JUDGE_CONCURRENCY"];
+  const parsed = raw === undefined ? 6 : Number(raw);
+  const safe = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 6;
+  return Math.max(1, Math.min(safe, totalInputs));
+}
+
 export async function judgeFixtures(
   inputs: JudgeInput[],
   onProgress?: (done: number, total: number) => void,
 ): Promise<JudgeScore[]> {
-  const results: JudgeScore[] = [];
-  for (let i = 0; i < inputs.length; i++) {
-    results.push(await judgeFixture(inputs[i]!));
-    onProgress?.(i + 1, inputs.length);
+  if (inputs.length === 0) return [];
+
+  const concurrency = resolveConcurrency(inputs.length);
+  const results: JudgeScore[] = new Array(inputs.length);
+  let cursor = 0;
+  let completed = 0;
+
+  async function worker(): Promise<void> {
+    while (true) {
+      const i = cursor++;
+      if (i >= inputs.length) return;
+      results[i] = await judgeFixture(inputs[i]!);
+      completed++;
+      onProgress?.(completed, inputs.length);
+    }
   }
+
+  await Promise.all(Array.from({ length: concurrency }, () => worker()));
   return results;
 }
 

@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -83,43 +83,70 @@ function sq(s: string): string {
 }
 
 // Runs cmd via `bash -c` so that shell-script wrappers (e.g. fnm shims) resolve
-// correctly. Stdin is piped from `input`; stdout is returned.
+// correctly. Stdin is piped from `input`; stdout is returned. Async so callers
+// can run multiple subprocesses concurrently — `spawnSync` would block the
+// Node event loop and serialise them regardless of Promise.all wrapping.
 function spawnViaBash(
   cmd: string,
   args: string[],
   stdinText: string,
   timeoutMs: number,
   fixtureId: string,
-): string {
+): Promise<string> {
   const shellCmd = [cmd, ...args.map(sq)].join(" ");
-  const result = spawnSync("bash", ["-c", shellCmd], {
-    input: stdinText,
-    encoding: "utf-8",
-    timeout: timeoutMs,
-    maxBuffer: 10 * 1024 * 1024,
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn("bash", ["-c", shellCmd], { stdio: ["pipe", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, timeoutMs);
+
+    child.stdout.setEncoding("utf-8");
+    child.stderr.setEncoding("utf-8");
+    child.stdout.on("data", (chunk: string) => { stdout += chunk; });
+    child.stderr.on("data", (chunk: string) => { stderr += chunk; });
+
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      const e = err as NodeJS.ErrnoException;
+      if (e.code === "ENOENT") {
+        rejectPromise(new Error(`bash not found — cannot invoke ${cmd} subprocess`));
+        return;
+      }
+      rejectPromise(err);
+    });
+
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      if (timedOut) {
+        rejectPromise(new Error(`${cmd} timed out for fixture ${fixtureId}`));
+        return;
+      }
+      if (code !== 0) {
+        const errOut = stderr.trim();
+        if (errOut.includes("command not found") || errOut.includes("not found")) {
+          rejectPromise(new Error(
+            `${cmd} not found — install it to use EVAL_JUDGE_RUNNER=${cmd === "claude" ? "claude-code" : "codex"}`,
+          ));
+          return;
+        }
+        rejectPromise(new Error(`${cmd} exited ${code} for ${fixtureId}: ${errOut.slice(0, 300)}`));
+        return;
+      }
+      resolvePromise(stdout);
+    });
+
+    child.stdin.on("error", (err) => {
+      clearTimeout(timer);
+      rejectPromise(err);
+    });
+    child.stdin.write(stdinText);
+    child.stdin.end();
   });
-
-  if (result.error) {
-    const err = result.error as NodeJS.ErrnoException;
-    if (err.code === "ENOENT") {
-      throw new Error(`bash not found — cannot invoke ${cmd} subprocess`);
-    }
-    throw result.error;
-  }
-  if (result.status === null) {
-    throw new Error(`${cmd} timed out for fixture ${fixtureId}`);
-  }
-  if (result.status !== 0) {
-    const stderr = result.stderr?.trim() ?? "";
-    if (stderr.includes("command not found") || stderr.includes("not found")) {
-      throw new Error(
-        `${cmd} not found — install it to use EVAL_JUDGE_RUNNER=${cmd === "claude" ? "claude-code" : "codex"}`,
-      );
-    }
-    throw new Error(`${cmd} exited ${result.status} for ${fixtureId}: ${stderr.slice(0, 300)}`);
-  }
-
-  return result.stdout;
 }
 
 // ── claude-code: spawn `claude --print` with minimal context ──────────────────
@@ -136,7 +163,7 @@ function spawnViaBash(
 //
 // Invoked via `bash -c` so fnm/npm shell-script shims resolve correctly.
 
-function runClaudeCode(input: RunnerInput, model: string): string {
+async function runClaudeCode(input: RunnerInput, model: string): Promise<string> {
   const userText = input.screenshotPath
     ? `${input.userText}\n\nThe screenshot of the rendered UI is saved at: ${input.screenshotPath}\nRead it to assess visual rendering quality.`
     : input.userText;
@@ -164,7 +191,7 @@ function runClaudeCode(input: RunnerInput, model: string): string {
 // -o            writes only the final assistant message to a temp file
 //               → avoids parsing JSONL event stream from stdout
 
-function runCodex(input: RunnerInput, model: string): string {
+async function runCodex(input: RunnerInput, model: string): Promise<string> {
   // codex exec has no --system-prompt flag; prepend rubric to the user turn
   const combinedPrompt = `${input.systemPrompt}\n\n---\n\n${input.userText}`;
 
@@ -179,7 +206,7 @@ function runCodex(input: RunnerInput, model: string): string {
 
     // codex exec reads from stdin when no prompt argument is provided;
     // invoked via bash -c so shell-script shims resolve correctly
-    const output = spawnViaBash("codex", args, combinedPrompt, 120_000, input.fixtureId);
+    const output = await spawnViaBash("codex", args, combinedPrompt, 120_000, input.fixtureId);
     void output; // stdout is discarded; real answer is in outputFile
 
     return readFileSync(outputFile, "utf-8");

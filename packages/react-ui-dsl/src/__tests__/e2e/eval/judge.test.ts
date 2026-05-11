@@ -9,7 +9,7 @@ vi.mock("./judge-runner.ts", () => ({
   resolveRunnerType: vi.fn(() => "codex"),
 }));
 
-import { judgeFixture, makeFailedFixtureScore } from "./judge.ts";
+import { judgeFixture, judgeFixtures, makeFailedFixtureScore } from "./judge.ts";
 import { DEFAULT_RUBRIC, buildJudgeSystemPrompt } from "./rubric.ts";
 
 describe("makeFailedFixtureScore", () => {
@@ -85,6 +85,45 @@ describe("judgeFixture", () => {
     });
 
     expect(score.visual_issues).toEqual(["overlap", "clipped"]);
+  });
+
+  it("runs judges concurrently with a bounded pool, preserving input order", async () => {
+    const previousConcurrency = process.env["EVAL_JUDGE_CONCURRENCY"];
+    process.env["EVAL_JUDGE_CONCURRENCY"] = "3";
+
+    let active = 0;
+    let peak = 0;
+
+    invokeRunner.mockImplementation(async (_type: unknown, runnerInput: { fixtureId: string }) => {
+      active++;
+      peak = Math.max(peak, active);
+      await new Promise((r) => setTimeout(r, 20));
+      active--;
+      return JSON.stringify({
+        component_fit: 3,
+        data_completeness: 3,
+        format_quality: 3,
+        layout_coherence: 3,
+        overall: Number(runnerInput.fixtureId.replace("f", "")),
+        feedback: runnerInput.fixtureId,
+      });
+    });
+
+    const inputs = Array.from({ length: 8 }, (_, i) => ({
+      fixtureId: `f${i}`,
+      dsl: "root = X()",
+      dataModel: {},
+      screenshotPath: null,
+    }));
+
+    const results = await judgeFixtures(inputs);
+
+    expect(results.map((r) => r.fixtureId)).toEqual(["f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7"]);
+    expect(peak).toBeGreaterThan(1);
+    expect(peak).toBeLessThanOrEqual(3);
+
+    if (previousConcurrency === undefined) delete process.env["EVAL_JUDGE_CONCURRENCY"];
+    else process.env["EVAL_JUDGE_CONCURRENCY"] = previousConcurrency;
   });
 
   it("defaults visual_issues to an empty array when omitted", async () => {
