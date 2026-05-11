@@ -3,3 +3,4 @@ packages:
   - "examples/**/*"
   - "docs/"
   - "!**/src/templates/**"
+  - "!packages/react-ui" # just for reference
