@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
-import type { RunManifest, RunState, VerificationSummaryData } from "./types.ts";
+import type { RunManifest, RunState, VerificationSummaryData, PhaseProgress, PhaseStatus } from "./types.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const RUNS_DIR = resolve(__dirname, "runs");
@@ -47,6 +47,7 @@ export function createRunWorkspace(
   runId: string,
   regen: boolean,
   suite: "e2e" | "fuzz" | "benchmark" = "e2e",
+  strictness: "standard" | "strict" = "standard",
 ): RunManifest {
   const runDir = getRunDir(runId);
   mkdirSync(runDir, { recursive: true });
@@ -62,6 +63,7 @@ export function createRunWorkspace(
     updatedAt: now,
     regen,
     suite,
+    strictness,
     reportDataPath: getReportDataPath(runId),
     taskBundlePath: getTaskBundlePath(runId),
     resultBundlePath: getResultBundlePath(runId),
@@ -105,4 +107,28 @@ export function updateRunState(
 export function listRunIds(): string[] {
   if (!existsSync(RUNS_DIR)) return [];
   return readdirSync(RUNS_DIR).filter((name) => existsSync(getRunJsonPath(name)));
+}
+
+export type PhaseName = "regen" | "render" | "screenshot" | "judge";
+
+export function markPhaseDone(runId: string, phase: PhaseName, status: PhaseStatus = "done"): RunManifest {
+  const manifest = readRunManifest(runId);
+  const phases: PhaseProgress = manifest.phases ?? {};
+  phases[phase] = status;
+  const updated: RunManifest = {
+    ...manifest,
+    phases,
+    updatedAt: new Date().toISOString(),
+  };
+  writeRunManifest(updated);
+  return updated;
+}
+
+export function getPhaseStatus(runId: string, phase: PhaseName): PhaseStatus | undefined {
+  const manifest = readRunManifest(runId);
+  return manifest.phases?.[phase];
+}
+
+export function isPhaseComplete(runId: string, phase: PhaseName): boolean {
+  return getPhaseStatus(runId, phase) === "done";
 }

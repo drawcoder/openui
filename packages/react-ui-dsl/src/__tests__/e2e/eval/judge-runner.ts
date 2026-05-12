@@ -1,11 +1,11 @@
 import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import OpenAI from "openai";
 
-export type JudgeRunnerType = "llm-api" | "claude-code" | "codex";
+export type JudgeRunnerType = "llm-api" | "claude-code" | "codex" | "gemini";
 
 export interface RunnerInput {
   systemPrompt: string;
@@ -16,15 +16,16 @@ export interface RunnerInput {
 
 export function resolveRunnerType(): JudgeRunnerType {
   const v = process.env["EVAL_JUDGE_RUNNER"];
-  if (v === "claude-code" || v === "codex") return v;
-  return "llm-api";
+  if (v === "claude-code" || v === "codex" || v === "gemini" || v === "llm-api") return v;
+  return "llm-api"; // Default: direct LLM API call (requires LLM_API_KEY + LLM_BASE_URL)
 }
 
-function resolveModel(runner: JudgeRunnerType): string {
+export function resolveModel(runner: JudgeRunnerType): string {
   const override = process.env["LLM_JUDGE_MODEL"];
   if (override) return override;
   if (runner === "claude-code") return "claude-haiku-4-5-20251001";
   if (runner === "codex") return "gpt-5.4-mini";
+  if (runner === "gemini") return "gemini-2.5-pro";
   return process.env["LLM_MODEL"] ?? "gpt-4o";
 }
 
@@ -33,6 +34,7 @@ export async function invokeRunner(type: JudgeRunnerType, input: RunnerInput): P
   switch (type) {
     case "claude-code": return runClaudeCode(input, model);
     case "codex": return runCodex(input, model);
+    case "gemini": return runGemini(input, model);
     default: return runLlmApi(input, model);
   }
 }
@@ -210,6 +212,36 @@ async function runCodex(input: RunnerInput, model: string): Promise<string> {
     void output; // stdout is discarded; real answer is in outputFile
 
     return readFileSync(outputFile, "utf-8");
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
+// ── gemini: spawn `gemini` cli ────────────────────────────────────────────────
+async function runGemini(input: RunnerInput, model: string): Promise<string> {
+  const tmpDir = mkdtempSync(join(tmpdir(), "eval-judge-gemini-"));
+  const sysPromptFile = join(tmpDir, "system.md");
+  const promptFile = join(tmpDir, "prompt.txt");
+
+  try {
+    writeFileSync(sysPromptFile, input.systemPrompt, "utf-8");
+    writeFileSync(promptFile, input.userText, "utf-8");
+    
+    let args = ["-p"];
+    if (input.screenshotPath) {
+      args.push(`@${promptFile}`, `@${input.screenshotPath}`);
+    } else {
+      args.push(`@${promptFile}`);
+    }
+
+    const output = await spawnViaBash(
+      `GEMINI_SYSTEM_MD=${sq(sysPromptFile)} gemini`,
+      args,
+      "",
+      120_000,
+      input.fixtureId,
+    );
+    return output;
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
   }

@@ -38,6 +38,15 @@ export type RunState =
   | "verified"
   | "stalled";
 
+export type PhaseStatus = "done" | "failed";
+
+export interface PhaseProgress {
+  regen?: PhaseStatus;
+  render?: PhaseStatus;
+  screenshot?: PhaseStatus;
+  judge?: PhaseStatus;
+}
+
 export type VerificationOutcome = "success" | "review-needed" | "stalled";
 
 export interface DeltaSummary {
@@ -69,11 +78,15 @@ export interface RunManifest {
   updatedAt: string;
   regen: boolean;
   suite?: "e2e" | "fuzz" | "benchmark";
+  /** React UI DSL prompt strictness used for this run. */
+  strictness?: "standard" | "strict";
   reportDataPath: string;
   taskBundlePath: string;
   resultBundlePath: string;
   historyPath: string;
   degraded: boolean;
+  /** Phase completion status for pipeline recovery. */
+  phases?: PhaseProgress;
   verificationSummary?: VerificationSummaryData;
 }
 
