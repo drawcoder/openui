@@ -1,4 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { rmSync, existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const { invokeRunner } = vi.hoisted(() => ({
   invokeRunner: vi.fn(),
@@ -7,6 +12,7 @@ const { invokeRunner } = vi.hoisted(() => ({
 vi.mock("./judge-runner.ts", () => ({
   invokeRunner,
   resolveRunnerType: vi.fn(() => "codex"),
+  resolveModel: vi.fn(() => "test-model"),
 }));
 
 import { judgeFixture, judgeFixtures, makeFailedFixtureScore } from "./judge.ts";
@@ -61,9 +67,58 @@ describe("buildJudgeSystemPrompt", () => {
   });
 });
 
-describe("judgeFixture", () => {
+describe("judge cache", () => {
+  const cacheDir = resolve(__dirname, ".judge-cache");
+
   beforeEach(() => {
     invokeRunner.mockReset();
+    if (existsSync(cacheDir)) rmSync(cacheDir, { recursive: true, force: true });
+  });
+
+  afterEach(() => {
+    if (existsSync(cacheDir)) rmSync(cacheDir, { recursive: true, force: true });
+  });
+
+  const okResponse = JSON.stringify({
+    component_fit: 3, data_completeness: 3, format_quality: 3,
+    layout_coherence: 3, overall: 8, feedback: "good",
+  });
+
+  it("returns cached result on second identical call without invoking runner again", async () => {
+    invokeRunner.mockResolvedValue(okResponse);
+    const input = { fixtureId: "x", dsl: "root = Gauge()", dataModel: {}, screenshotPath: null };
+    await judgeFixture(input);
+    await judgeFixture(input);
+    expect(invokeRunner).toHaveBeenCalledTimes(1);
+  });
+
+  it("misses cache when rubric changes (different evalHints)", async () => {
+    invokeRunner.mockResolvedValue(okResponse);
+    const base = { fixtureId: "y", dsl: "root = Gauge()", dataModel: {}, screenshotPath: null };
+    await judgeFixture({ ...base, evalHints: ["hint-A"] });
+    await judgeFixture({ ...base, evalHints: ["hint-B"] });
+    expect(invokeRunner).toHaveBeenCalledTimes(2);
+  });
+
+  it("misses cache when DSL changes", async () => {
+    invokeRunner.mockResolvedValue(okResponse);
+    const base = { fixtureId: "z", dataModel: {}, screenshotPath: null };
+    await judgeFixture({ ...base, dsl: "root = A()" });
+    await judgeFixture({ ...base, dsl: "root = B()" });
+    expect(invokeRunner).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("judgeFixture", () => {
+  const cacheDir = resolve(__dirname, ".judge-cache");
+
+  beforeEach(() => {
+    invokeRunner.mockReset();
+    if (existsSync(cacheDir)) rmSync(cacheDir, { recursive: true, force: true });
+  });
+
+  afterEach(() => {
+    if (existsSync(cacheDir)) rmSync(cacheDir, { recursive: true, force: true });
   });
 
   it("normalizes visual_issues against the supported allowlist", async () => {
@@ -111,7 +166,7 @@ describe("judgeFixture", () => {
 
     const inputs = Array.from({ length: 8 }, (_, i) => ({
       fixtureId: `f${i}`,
-      dsl: "root = X()",
+      dsl: `root = X${i}()`, // unique per fixture so each gets its own cache key
       dataModel: {},
       screenshotPath: null,
     }));

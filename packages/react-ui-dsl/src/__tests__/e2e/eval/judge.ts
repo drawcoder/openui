@@ -1,7 +1,12 @@
 import type { JudgeScore, VisualIssueTag } from "./types.ts";
 import { VISUAL_ISSUE_TAGS } from "./types.ts";
 import { buildJudgeSystemPrompt } from "./rubric.ts";
-import { invokeRunner, resolveRunnerType } from "./judge-runner.ts";
+import { invokeRunner, resolveRunnerType, resolveModel } from "./judge-runner.ts";
+import {
+  computeJudgeCacheKey,
+  readJudgeCache,
+  writeJudgeCache,
+} from "./judge-cache.ts";
 
 interface JudgeInput {
   fixtureId: string;
@@ -96,7 +101,23 @@ export async function judgeFixture(input: JudgeInput): Promise<JudgeScore> {
   const systemPrompt = buildJudgeSystemPrompt(input.rubricOverride, input.evalHints);
   const userText = buildUserText(input);
   const runnerType = resolveRunnerType();
+  const judgeModel = resolveModel(runnerType);
 
+  // Check cache first
+  const cacheKey = computeJudgeCacheKey({
+    dsl: input.dsl,
+    screenshotPath: input.screenshotPath,
+    rubricText: systemPrompt,
+    judgeModel,
+  });
+
+  const cached = readJudgeCache(cacheKey);
+  if (cached) {
+    console.log(`[judge] Cache hit for ${input.fixtureId}`);
+    return cached;
+  }
+
+  // Call runner if not cached
   const responseText = await invokeRunner(runnerType, {
     systemPrompt,
     userText,
@@ -106,7 +127,7 @@ export async function judgeFixture(input: JudgeInput): Promise<JudgeScore> {
 
   const raw = parseJudgeResponse(responseText, input.fixtureId);
 
-  return {
+  const score: JudgeScore = {
     fixtureId: input.fixtureId,
     component_fit: clamp(raw.component_fit, 0, 3),
     data_completeness: clamp(raw.data_completeness, 0, 3),
@@ -118,6 +139,11 @@ export async function judgeFixture(input: JudgeInput): Promise<JudgeScore> {
     screenshotPath: input.screenshotPath,
     degraded: input.screenshotPath === null,
   };
+
+  // Write to cache
+  writeJudgeCache(cacheKey, score);
+
+  return score;
 }
 
 // Bounded-concurrency pool. Default 6 keeps a benchmark of ~44 fixtures under
@@ -148,6 +174,39 @@ export async function judgeFixtures(
       results[i] = await judgeFixture(inputs[i]!);
       completed++;
       onProgress?.(completed, inputs.length);
+    }
+  }
+
+  await Promise.all(Array.from({ length: concurrency }, () => worker()));
+  return results;
+}
+
+/**
+ * Incremental judge: yields each score as it completes via onFixtureComplete callback.
+ * Use for crash recovery - write progress after each fixture.
+ */
+export async function judgeFixturesIncremental(
+  inputs: JudgeInput[],
+  onFixtureComplete: (score: JudgeScore, done: number, total: number) => Promise<void>,
+  onProgress?: (done: number, total: number) => void,
+): Promise<JudgeScore[]> {
+  if (inputs.length === 0) return [];
+
+  const concurrency = resolveConcurrency(inputs.length);
+  const results: JudgeScore[] = new Array(inputs.length);
+  let cursor = 0;
+  let completed = 0;
+
+  async function worker(): Promise<void> {
+    while (true) {
+      const i = cursor++;
+      if (i >= inputs.length) return;
+      const score = await judgeFixture(inputs[i]!);
+      results[i] = score;
+      completed++;
+      onProgress?.(completed, inputs.length);
+      // Write progress after each fixture
+      await onFixtureComplete(score, completed, inputs.length);
     }
   }
 
