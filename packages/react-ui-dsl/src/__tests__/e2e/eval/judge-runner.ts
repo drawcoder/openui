@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HttpsProxyAgent } from "https-proxy-agent";
@@ -224,8 +224,8 @@ async function runGemini(input: RunnerInput, model: string): Promise<string> {
   const promptFile = join(tmpDir, "prompt.txt");
 
   try {
-    require("node:fs").writeFileSync(sysPromptFile, input.systemPrompt, "utf-8");
-    require("node:fs").writeFileSync(promptFile, input.userText, "utf-8");
+    writeFileSync(sysPromptFile, input.systemPrompt, "utf-8");
+    writeFileSync(promptFile, input.userText, "utf-8");
     
     let args = ["-p"];
     if (input.screenshotPath) {

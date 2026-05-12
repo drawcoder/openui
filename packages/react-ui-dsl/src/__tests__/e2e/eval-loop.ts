@@ -26,7 +26,7 @@ import { aggregateFailingPatterns, computeOverallScore } from "./eval/failing-pa
 import { regenFixtures } from "./eval/regen";
 import { loadBenchmarkCases } from "./benchmark-loader";
 import { clearJudgeCache } from "./eval/judge-cache";
-import { computeReportAppCacheKey, restoreReportAppCache, saveReportAppCache } from "./eval/report-app-cache";
+import { clearReportAppCache, computeReportAppCacheKey, restoreReportAppCache, saveReportAppCache } from "./eval/report-app-cache";
 import { writeTaskBundle } from "./eval/task-bundle-writer";
 import { readResultBundle, hasResultBundle, ResultBundleError } from "./eval/result-bundle-reader";
 import { computeDelta, pickVerificationOutcome } from "./eval/delta-verifier";
@@ -83,9 +83,9 @@ const CONTENT_TYPES: Record<string, string> = {
 function runVitest(reportDir: string, regen: boolean, suite: EvalSuite = "e2e", fixtureFilter?: string): void {
   const testPath =
     suite === "fuzz"
-      ? "src/__tests__/e2e/dsl-fuzz.testx"
+      ? "src/__tests__/e2e/dsl-fuzz.test.tsx"
       : suite === "benchmark"
-        ? "src/__tests__/e2e/dsl-benchmark.testx"
+        ? "src/__tests__/e2e/dsl-benchmark.test.tsx"
         : "src/__tests__/e2e";
   // Call vitest binary directly to avoid pnpm's deps-status check which
   // runs `pnpm install` and triggers all workspace prepare scripts.
@@ -120,10 +120,12 @@ function injectReportData(reportDir: string): void {
     .replace(/</g, "\\u003c")
     .replace(/<\/script/gi, "<\\/script");
   const htmlPath = resolve(reportDir, "index.html");
-  const html = readFileSync(htmlPath, "utf-8").replace(
-    "</body>",
-    `<script id="e2e-report-data" type="application/json">${reportData}</script></body>`,
-  );
+  const html = readFileSync(htmlPath, "utf-8")
+    .replace(/<script id="e2e-report-data" type="application\/json">[\s\S]*?<\/script>/g, "")
+    .replace(
+      "</body>",
+      `<script id="e2e-report-data" type="application/json">${reportData}</script></body>`,
+    );
   writeFileSync(htmlPath, html, "utf-8");
 }
 
@@ -394,7 +396,10 @@ async function runJudgePhase(
     judge_scores: allScores,
     failing_patterns: failingPatterns,
   };
-  writeReportData(ctx.reportDir, enhanced);
+  const dataPath = resolve(ctx.reportDir, "report-data.json");
+  const tmpPath = `${dataPath}.tmp`;
+  writeFileSync(tmpPath, JSON.stringify(enhanced, null, 2), "utf-8");
+  renameSync(tmpPath, dataPath);
   markPhaseDone(ctx.runId, "judge");
   return enhanced;
 }
@@ -565,8 +570,10 @@ async function cmdVerify(argv: string[]): Promise<void> {
   const verifyDir = resolve(dirname(getReportDataPath(runId)), "verify");
   mkdirSync(verifyDir, { recursive: true });
 
+  const suite: EvalSuite = (manifest.suite as EvalSuite) ?? "e2e";
+
   console.log(`\n[verify] Running full fixture re-evaluation (regression gate)…`);
-  runVitest(verifyDir, false);
+  runVitest(verifyDir, false, suite);
 
   const verifyReportData = existsSync(resolve(verifyDir, "report-data.json"))
     ? (JSON.parse(readFileSync(resolve(verifyDir, "report-data.json"), "utf-8")) as E2EReportData)
@@ -637,9 +644,12 @@ async function cmdVerify(argv: string[]): Promise<void> {
   const summary = buildVerificationSummary(deltaResult, updatedHistory);
   printVerificationSummary(summary, runId);
 
+  const currentJudgeMap = new Map(currentScores.map((s) => [s.fixtureId, s]));
   const updatedReportData: E2EReportData = {
     ...baselineReportData,
+    entries: baselineReportData.entries.map((e) => ({ ...e, judgeScore: currentJudgeMap.get(e.id) })),
     judge_scores: currentScores,
+    failing_patterns: aggregateFailingPatterns(currentScores),
     delta: deltaResult.delta,
     summary: {
       ...baselineReportData.summary,
@@ -733,32 +743,58 @@ async function cmdJudge(argv: string[]): Promise<void> {
     console.log(`[judge] Skipping judge for ${failedScores.length} failed fixture(s); assigning 0 score.`);
   }
 
-  const liveScores = await judgeFixtures(judgeInputs, (done, total) =>
-    process.stdout.write(`\r  ${done}/${total}`),
+  let mutex = Promise.resolve();
+  const existingScores = reportData.judge_scores ?? [];
+  const forceRejudge = process.env["EVAL_FORCE_REJUDGE"] === "1";
+  const accumulatedScores: JudgeScore[] = [...existingScores.filter((s) => !forceRejudge)];
+
+  const liveScores = await judgeFixturesIncremental(
+    judgeInputs,
+    async (score) => {
+      mutex = mutex.then(async () => {
+        accumulatedScores.push(score);
+        const allSoFar = [...accumulatedScores, ...failedScores];
+        const snapshot: E2EReportData = {
+          ...reportData,
+          summary: { ...reportData.summary, overallScore: computeOverallScore(allSoFar) },
+          entries: reportData.entries.map((e) => ({ ...e, judgeScore: new Map(allSoFar.map((s) => [s.fixtureId, s])).get(e.id) })),
+          judge_scores: allSoFar,
+          failing_patterns: aggregateFailingPatterns(allSoFar),
+        };
+        const tmpPath = `${resolve(reportDir, "report-data.json")}.tmp`;
+        writeFileSync(tmpPath, JSON.stringify(snapshot, null, 2), "utf-8");
+        renameSync(tmpPath, resolve(reportDir, "report-data.json"));
+        if (existsSync(resolve(reportDir, "index.html"))) injectReportData(reportDir);
+      });
+      await mutex;
+    },
+    (done, total) => process.stdout.write(`\r  ${done}/${total}`),
   );
-  const judgeScores: JudgeScore[] = [...liveScores, ...failedScores];
+  await mutex;
   console.log();
 
-  // Compute overall score and failing patterns
+  const judgeScores: JudgeScore[] = [
+    ...existingScores.filter((s) => !forceRejudge && !liveScores.some((n) => n.fixtureId === s.fixtureId) && !failedScores.some((f) => f.fixtureId === s.fixtureId)),
+    ...liveScores,
+    ...failedScores,
+  ];
   const overallScore = computeOverallScore(judgeScores);
   const failingPatterns = aggregateFailingPatterns(judgeScores);
   const judgeMap = new Map(judgeScores.map((s) => [s.fixtureId, s]));
 
-  // Update report data with judge scores
-  const enrichedEntries: E2EReportEntry[] = reportData.entries.map((e) => ({
-    ...e,
-    judgeScore: judgeMap.get(e.id),
-  }));
-
   const enhanced: E2EReportData = {
     ...reportData,
     summary: { ...reportData.summary, overallScore },
-    entries: enrichedEntries,
+    entries: reportData.entries.map((e) => ({ ...e, judgeScore: judgeMap.get(e.id) })),
     judge_scores: judgeScores,
     failing_patterns: failingPatterns,
   };
 
-  writeReportData(reportDir, enhanced);
+  const finalTmp = `${resolve(reportDir, "report-data.json")}.tmp`;
+  writeFileSync(finalTmp, JSON.stringify(enhanced, null, 2), "utf-8");
+  renameSync(finalTmp, resolve(reportDir, "report-data.json"));
+  markPhaseDone(runId, "judge");
+  if (existsSync(resolve(reportDir, "index.html"))) injectReportData(reportDir);
 
   // Write task bundle
   writeTaskBundle({
@@ -924,7 +960,8 @@ async function main(): Promise<void> {
       break;
     case "cache:clear":
       clearJudgeCache();
-      console.log("Judge cache cleared.");
+      clearReportAppCache();
+      console.log("Judge and report-app caches cleared.");
       break;
     default:
       console.log("Usage: pnpm eval <command> [options]");

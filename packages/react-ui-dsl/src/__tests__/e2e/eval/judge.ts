@@ -106,6 +106,7 @@ export async function judgeFixture(input: JudgeInput): Promise<JudgeScore> {
   // Check cache first
   const cacheKey = computeJudgeCacheKey({
     dsl: input.dsl,
+    userText,
     screenshotPath: input.screenshotPath,
     rubricText: systemPrompt,
     judgeModel,

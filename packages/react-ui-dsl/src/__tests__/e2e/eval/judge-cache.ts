@@ -9,6 +9,7 @@ const CACHE_DIR = resolve(__dirname, ".judge-cache");
 
 export interface JudgeCacheKeyInput {
   dsl: string;
+  userText: string;
   screenshotPath: string | null;
   rubricText: string;
   judgeModel: string;
@@ -16,7 +17,7 @@ export interface JudgeCacheKeyInput {
 
 /**
  * Compute cache key from judge input parameters.
- * Key is sha256 of dsl + screenshot_hash + rubric_hash + model.
+ * Key is sha256 of dsl + userText + screenshot_hash + rubric_hash + model.
  */
 export function computeJudgeCacheKey(input: JudgeCacheKeyInput): string {
   const screenshotHash = input.screenshotPath && existsSync(input.screenshotPath)
@@ -24,9 +25,11 @@ export function computeJudgeCacheKey(input: JudgeCacheKeyInput): string {
     : "no-screenshot";
 
   const rubricHash = createHash("sha256").update(input.rubricText).digest("hex").slice(0, 16);
+  const userTextHash = createHash("sha256").update(input.userText).digest("hex").slice(0, 16);
 
   const keyMaterial = [
     input.dsl,
+    userTextHash,
     screenshotHash,
     rubricHash,
     input.judgeModel,

@@ -93,11 +93,7 @@ export function restoreReportAppCache(targetDir: string, key: string): boolean {
  */
 export function saveReportAppCache(sourceDir: string, key: string): void {
   const cachePath = resolve(CACHE_DIR, key);
-  const cacheParent = resolve(CACHE_DIR, key.slice(0, 2));
-
-  if (!existsSync(cacheParent)) {
-    mkdirSync(cacheParent, { recursive: true });
-  }
+  mkdirSync(cachePath, { recursive: true });
 
   for (const artifact of VITE_ARTIFACTS) {
     const src = resolve(sourceDir, artifact);

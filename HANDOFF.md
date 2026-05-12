@@ -24,7 +24,7 @@ pnpm eval cache:clear              # clear judge hash cache
 `claude-code` runner doesn't work inside a Claude Code session (403 on nested auth).
 Using `llm-api` with Qwen VL instead:
 
-```
+```env
 EVAL_JUDGE_RUNNER=llm-api
 LLM_JUDGE_MODEL=qwen-vl-max
 LLM_API_KEY=<dashscope key>
