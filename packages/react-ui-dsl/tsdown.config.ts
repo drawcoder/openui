@@ -1,6 +1,8 @@
 import { defineConfig } from "tsdown";
+import { createViewTargetAliases } from "./view-target.config.ts";
 
 const shared = {
+  alias: createViewTargetAliases(),
   sourcemap: true,
   target: "es2022",
   clean: false,
