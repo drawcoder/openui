@@ -1,6 +1,7 @@
 packages:
   - "packages/*"
   - "examples/**/*"
-  - "docs/"
   - "!**/src/templates/**"
   - "!packages/react-ui" # just for reference
+allowBuilds:
+  esbuild: true
