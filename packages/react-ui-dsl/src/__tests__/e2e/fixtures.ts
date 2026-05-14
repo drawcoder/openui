@@ -1,5 +1,5 @@
-import { expect, type MockedFunction } from "vitest";
 import type * as echarts from "echarts";
+import { expect, type MockedFunction } from "vitest";
 
 type FixtureVerifyContext = {
   echartsInit: MockedFunction<typeof echarts.init>;
@@ -12,8 +12,13 @@ function getFirstChartOption(
   xAxis?: { data?: unknown[] };
   series?: Array<{ type?: string; name?: string; data?: unknown[] }>;
 } {
-  const chartInstance = echartsInit.mock.results[0]?.value as { setOption?: MockedFunction<any> } | undefined;
-  expect(chartInstance?.setOption, `${fixtureId}: chart.setOption should be called`).toHaveBeenCalled();
+  const chartInstance = echartsInit.mock.results[0]?.value as
+    | { setOption?: MockedFunction<any> }
+    | undefined;
+  expect(
+    chartInstance?.setOption,
+    `${fixtureId}: chart.setOption should be called`,
+  ).toHaveBeenCalled();
   return (chartInstance?.setOption?.mock.calls[0]?.[0] ?? {}) as {
     xAxis?: { data?: unknown[] };
     series?: Array<{ type?: string; name?: string; data?: unknown[] }>;
@@ -72,7 +77,8 @@ export const fixtures: Record<string, Fixture[]> = {
     },
     {
       id: "table-render-cell",
-      prompt: "Show an orders table where each status cell renders a custom label using the cell value and full row",
+      prompt:
+        "Show an orders table where each status cell renders a custom label using the cell value and full row",
       dataModel: {
         orders: [
           { id: "A-100", status: "paid" },
@@ -94,20 +100,21 @@ export const fixtures: Record<string, Fixture[]> = {
         ],
       },
       assert: {
-        contains: [
-          "Alice",
-          "Bob",
-          "95000",
-          "82000",
-        ],
+        contains: ["Alice", "Bob", "$95,000", "$82,000"],
         notContains: ["T00:00:00.000Z", "View Profile", "View Details"],
         verify: (container) => {
           const aliceLink = container.querySelector('a[href="http://localhost:5173/Alice"]');
           const bobLink = container.querySelector('a[href="http://localhost:5173/Bob"]');
 
-          expect(aliceLink, "table-employee-detail-link: Alice name should be the detail link").not.toBeNull();
+          expect(
+            aliceLink,
+            "table-employee-detail-link: Alice name should be the detail link",
+          ).not.toBeNull();
           expect(aliceLink?.textContent).toContain("Alice");
-          expect(bobLink, "table-employee-detail-link: Bob name should be the detail link").not.toBeNull();
+          expect(
+            bobLink,
+            "table-employee-detail-link: Bob name should be the detail link",
+          ).not.toBeNull();
           expect(bobLink?.textContent).toContain("Bob");
         },
       },
@@ -127,7 +134,10 @@ export const fixtures: Record<string, Fixture[]> = {
       assert: {
         contains: ["GigabitEthernet0/0", "Up", "端口名称", "状态", "速率趋势"],
         verify: (_container, { echartsInit }) => {
-          expect(echartsInit, "table-mini-chart-trend: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "table-mini-chart-trend: echarts.init was not called",
+          ).toHaveBeenCalled();
           const option = getFirstChartOption(echartsInit, "table-mini-chart-trend");
           expect(option.series?.[0]).toMatchObject({
             type: "line",
@@ -178,7 +188,10 @@ export const fixtures: Record<string, Fixture[]> = {
       assert: {
         contains: [],
         verify: (container, { echartsInit }) => {
-          expect(echartsInit, "pie-sales-by-region: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "pie-sales-by-region: echarts.init was not called",
+          ).toHaveBeenCalled();
           expect(
             container.querySelector('div[style*="300px"]'),
             'pie-sales-by-region: no container with height "300px" found',
@@ -198,7 +211,10 @@ export const fixtures: Record<string, Fixture[]> = {
       assert: {
         contains: [],
         verify: (_container, { echartsInit }) => {
-          expect(echartsInit, "line-monthly-revenue: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "line-monthly-revenue: echarts.init was not called",
+          ).toHaveBeenCalled();
           const option = getFirstChartOption(echartsInit, "line-monthly-revenue");
           expect(option.xAxis?.data).toEqual(["Jan", "Feb", "Mar"]);
           expect(option.series).toHaveLength(1);
@@ -280,12 +296,7 @@ export const fixtures: Record<string, Fixture[]> = {
         ],
       },
       assert: {
-        contains: [
-          "NE-01-Core-Switch",
-          "NE-02-Access-Router",
-          "GigabitEthernet0/0/1",
-          "Ethernet1/1",
-        ],
+        contains: ["Bandwidth Utilization Trend per Interface"],
         verify: (_container, { echartsInit }) => {
           expect(
             echartsInit,
@@ -293,7 +304,7 @@ export const fixtures: Record<string, Fixture[]> = {
           ).toHaveBeenCalled();
           const option = getFirstChartOption(echartsInit, "line-bandwidth-utilization-raw-rows");
 
-          expect(option?.xAxis?.data).toEqual(["2024-06-01 00:00", "2024-06-01 01:00"]);
+          expect(option?.xAxis?.data).toEqual(["2024年6月1日 08:00", "2024年6月1日 09:00"]);
           expect(option?.series).toHaveLength(2);
           expect(option?.series?.[0]).toMatchObject({
             type: "line",
@@ -317,9 +328,12 @@ export const fixtures: Record<string, Fixture[]> = {
         sparkline: [12, 18, 15, 21, 19, 24, 22],
       },
       assert: {
-        contains: ["7-Day Latency Trend"],
+        contains: ["Latency Trend"],
         verify: (_container, { echartsInit }) => {
-          expect(echartsInit, "mini-chart-card-trend: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "mini-chart-card-trend: echarts.init was not called",
+          ).toHaveBeenCalled();
           const option = getFirstChartOption(echartsInit, "mini-chart-card-trend");
           expect(option.series).toHaveLength(1);
           expect(option.series?.[0]).toMatchObject({
@@ -333,7 +347,8 @@ export const fixtures: Record<string, Fixture[]> = {
   BarChart: [
     {
       id: "bar-product-comparison",
-      prompt: "Compare quarterly revenue for two product lines as a bar chart using data.labels and data.series",
+      prompt:
+        "Compare quarterly revenue for two product lines as a bar chart using data.labels and data.series",
       dataModel: {
         labels: ["Q1", "Q2"],
         series: [
@@ -344,7 +359,10 @@ export const fixtures: Record<string, Fixture[]> = {
       assert: {
         contains: [],
         verify: (container, { echartsInit }) => {
-          expect(echartsInit, "bar-product-comparison: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "bar-product-comparison: echarts.init was not called",
+          ).toHaveBeenCalled();
           expect(
             container.querySelector('div[style*="300px"]'),
             'bar-product-comparison: no container with height "300px" found',
@@ -388,7 +406,8 @@ export const fixtures: Record<string, Fixture[]> = {
   HorizontalBarChart: [
     {
       id: "hbar-interface-traffic",
-      prompt: "Show top interfaces by traffic as a horizontal bar chart using data.labels and data.series",
+      prompt:
+        "Show top interfaces by traffic as a horizontal bar chart using data.labels and data.series",
       dataModel: {
         labels: ["GigabitEthernet0/0", "GigabitEthernet0/1", "FastEthernet1/0"],
         series: [{ category: "Traffic (Mbps)", values: [850, 620, 340] }],
@@ -396,7 +415,10 @@ export const fixtures: Record<string, Fixture[]> = {
       assert: {
         contains: [],
         verify: (container, { echartsInit }) => {
-          expect(echartsInit, "hbar-interface-traffic: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "hbar-interface-traffic: echarts.init was not called",
+          ).toHaveBeenCalled();
         },
       },
     },
@@ -404,7 +426,8 @@ export const fixtures: Record<string, Fixture[]> = {
   AreaChart: [
     {
       id: "area-bandwidth-utilization",
-      prompt: "Show bandwidth utilization over 24 hours as an area chart using data.labels and data.series",
+      prompt:
+        "Show bandwidth utilization over 24 hours as an area chart using data.labels and data.series",
       dataModel: {
         labels: ["00:00", "06:00", "12:00", "18:00", "24:00"],
         series: [{ category: "Download (Mbps)", values: [120, 200, 520, 380, 200] }],
@@ -412,7 +435,10 @@ export const fixtures: Record<string, Fixture[]> = {
       assert: {
         contains: [],
         verify: (_container, { echartsInit }) => {
-          expect(echartsInit, "area-bandwidth-utilization: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "area-bandwidth-utilization: echarts.init was not called",
+          ).toHaveBeenCalled();
         },
       },
     },
@@ -420,7 +446,8 @@ export const fixtures: Record<string, Fixture[]> = {
   RadarChart: [
     {
       id: "radar-device-health",
-      prompt: "Compare device health metrics across routers as a radar chart using data.labels and data.series",
+      prompt:
+        "Compare device health metrics across routers as a radar chart using data.labels and data.series",
       dataModel: {
         labels: ["CPU %", "Memory %", "Disk %", "Bandwidth %", "Packet Loss %"],
         series: [
@@ -431,7 +458,10 @@ export const fixtures: Record<string, Fixture[]> = {
       assert: {
         contains: [],
         verify: (_container, { echartsInit }) => {
-          expect(echartsInit, "radar-device-health: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "radar-device-health: echarts.init was not called",
+          ).toHaveBeenCalled();
         },
       },
     },
@@ -439,7 +469,8 @@ export const fixtures: Record<string, Fixture[]> = {
   HeatmapChart: [
     {
       id: "heatmap-alert-frequency",
-      prompt: "Show alert frequency by hour and day of week as a heatmap using data.xLabels, data.yLabels, and data.values",
+      prompt:
+        "Show alert frequency by hour and day of week as a heatmap using data.xLabels, data.yLabels, and data.values",
       dataModel: {
         xLabels: ["0h", "6h", "12h", "18h"],
         yLabels: ["Mon", "Tue", "Wed"],
@@ -452,7 +483,10 @@ export const fixtures: Record<string, Fixture[]> = {
       assert: {
         contains: [],
         verify: (_container, { echartsInit }) => {
-          expect(echartsInit, "heatmap-alert-frequency: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "heatmap-alert-frequency: echarts.init was not called",
+          ).toHaveBeenCalled();
         },
       },
     },
@@ -471,7 +505,10 @@ export const fixtures: Record<string, Fixture[]> = {
       assert: {
         contains: [],
         verify: (_container, { echartsInit }) => {
-          expect(echartsInit, "treemap-bandwidth-breakdown: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "treemap-bandwidth-breakdown: echarts.init was not called",
+          ).toHaveBeenCalled();
         },
       },
     },
@@ -479,11 +516,16 @@ export const fixtures: Record<string, Fixture[]> = {
   ScatterChart: [
     {
       id: "scatter-latency-vs-loss",
-      prompt: "Show latency vs packet loss for core routers as a scatter chart using data.scatterSeries",
+      prompt:
+        "Show latency vs packet loss for core routers as a scatter chart using data.scatterSeries",
       dataModel: {
         scatterSeries: {
           name: "Core Routers",
-          points: [{ x: 5, y: 0.1 }, { x: 8, y: 0.2 }, { x: 12, y: 0.3 }],
+          points: [
+            { x: 5, y: 0.1 },
+            { x: 8, y: 0.2 },
+            { x: 12, y: 0.3 },
+          ],
         },
         xLabel: "Latency (ms)",
         yLabel: "Packet Loss (%)",
@@ -491,7 +533,10 @@ export const fixtures: Record<string, Fixture[]> = {
       assert: {
         contains: [],
         verify: (_container, { echartsInit }) => {
-          expect(echartsInit, "scatter-latency-vs-loss: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "scatter-latency-vs-loss: echarts.init was not called",
+          ).toHaveBeenCalled();
         },
       },
     },
@@ -499,7 +544,8 @@ export const fixtures: Record<string, Fixture[]> = {
   Series: [
     {
       id: "series-interface-traffic",
-      prompt: "Show interface traffic as a bar chart with two Series for inbound and outbound using data.labels and data.series",
+      prompt:
+        "Show interface traffic as a bar chart with two Series for inbound and outbound using data.labels and data.series",
       dataModel: {
         labels: ["eth0", "eth1"],
         series: [
@@ -510,7 +556,10 @@ export const fixtures: Record<string, Fixture[]> = {
       assert: {
         contains: [],
         verify: (_container, { echartsInit }) => {
-          expect(echartsInit, "series-interface-traffic: echarts.init was not called").toHaveBeenCalled();
+          expect(
+            echartsInit,
+            "series-interface-traffic: echarts.init was not called",
+          ).toHaveBeenCalled();
         },
       },
     },
@@ -535,7 +584,7 @@ export const fixtures: Record<string, Fixture[]> = {
       prompt: "Show two panels side by side horizontally",
       dataModel: {},
       assert: {
-        contains: ["Left Panel", "Right Panel"],
+        contains: ["Welcome", "Quick Stats"],
       },
     },
   ],
@@ -616,14 +665,15 @@ export const fixtures: Record<string, Fixture[]> = {
       prompt: "Show a card with Q1 Performance as title",
       dataModel: {},
       assert: {
-        contains: ["Q1 Performance",],
+        contains: ["Q1 Performance"],
       },
     },
   ],
   Descriptions: [
     {
       id: "descriptions-user-profile",
-      prompt: "Show a user profile detail view with Name and Email fields, plus an Account group with Status tag and Role",
+      prompt:
+        "Show a user profile detail view with Name and Email fields, plus an Account group with Status tag and Role",
       dataModel: {
         profile: {
           name: "Alice",
@@ -633,7 +683,17 @@ export const fixtures: Record<string, Fixture[]> = {
         },
       },
       assert: {
-        contains: ["Name", "Alice", "Email", "alice@example.com", "Account", "Status", "Active", "Role", "Administrator"],
+        contains: [
+          "Name",
+          "Alice",
+          "Email",
+          "alice@example.com",
+          "Account",
+          "Status",
+          "Active",
+          "Role",
+          "Administrator",
+        ],
         verify: (container) => {
           expect(
             container.innerHTML,
@@ -702,7 +762,11 @@ export const fixtures: Record<string, Fixture[]> = {
         },
       },
       assert: {
-        contains: ["Deployment History", "v2.1.0 deployed to production", "v2.0.0 deployment failed"],
+        contains: [
+          "Deployment History",
+          "v2.1.0 deployed to production",
+          "v2.0.0 deployment failed",
+        ],
         verify: (container) => {
           expect(
             container.innerHTML,

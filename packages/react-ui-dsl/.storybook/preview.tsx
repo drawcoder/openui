@@ -1,6 +1,8 @@
 import type { Preview } from "@storybook/react";
-import "antd/dist/reset.css";
-import React from "react";
+
+if (process.env.REACT_UI_DSL_VIEW_TARGET !== "eview") {
+  void import("antd/dist/reset.css");
+}
 
 const preview: Preview = {
   parameters: {

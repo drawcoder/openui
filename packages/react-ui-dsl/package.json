@@ -112,6 +112,7 @@
     "cross-env": "^10.1.0",
     "echarts": "^5.0.0",
     "https-proxy-agent": "^9.0.0",
+    "jsdom": "^27.3.0",
     "openai": "^4.93.0",
     "playwright": "1.59.1",
     "tsx": "^4.19.0",
