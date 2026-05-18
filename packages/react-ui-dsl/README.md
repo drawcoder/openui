@@ -103,7 +103,7 @@ EVAL_JUDGE_RUNNER=codex
 ```bash
 LLM_API_KEY=sk-...
 LLM_BASE_URL=https://api.openai.com/v1
-LLM_JUDGE_MODEL=gpt-4o
+LLM_JUDGE_MODEL=gpt-5.4-mini
 ```
 
 **Judge concurrency.** The judge step runs fixtures through a bounded worker pool — default 6 in parallel. Override with `EVAL_JUDGE_CONCURRENCY=<n>` if the upstream API rate-limits or you want to push harder. With 6 in parallel, a 44-fixture benchmark judge step finishes in roughly `(44 / 6) × per-fixture-latency` instead of `44 × per-fixture-latency`.

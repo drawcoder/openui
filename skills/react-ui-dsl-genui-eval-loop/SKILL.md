@@ -29,7 +29,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 # Option C: any OpenAI-compatible endpoint
 LLM_API_KEY=sk-...
 LLM_BASE_URL=https://api.openai.com/v1
-LLM_JUDGE_MODEL=gpt-4o
+LLM_JUDGE_MODEL=gpt-5.4-mini
 ```
 
 Override the judge model at any time with `LLM_JUDGE_MODEL=<model>`.
