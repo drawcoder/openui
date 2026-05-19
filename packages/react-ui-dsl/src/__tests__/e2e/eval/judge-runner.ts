@@ -84,6 +84,10 @@ function sq(s: string): string {
   return `'${s.replace(/'/g, "'\\''")}'`;
 }
 
+function psq(s: string): string {
+  return `'${s.replace(/'/g, "''")}'`;
+}
+
 // Runs cmd via `bash -c` so that shell-script wrappers (e.g. fnm shims) resolve
 // correctly. Stdin is piped from `input`; stdout is returned. Async so callers
 // can run multiple subprocesses concurrently — `spawnSync` would block the
@@ -116,6 +120,10 @@ function spawnViaBash(
       clearTimeout(timer);
       const e = err as NodeJS.ErrnoException;
       if (e.code === "ENOENT") {
+        if (process.platform === "win32") {
+          spawnViaPowerShell(cmd, args, stdinText, timeoutMs, fixtureId).then(resolvePromise, rejectPromise);
+          return;
+        }
         rejectPromise(new Error(`bash not found — cannot invoke ${cmd} subprocess`));
         return;
       }
@@ -165,6 +173,113 @@ function spawnViaBash(
 //
 // Invoked via `bash -c` so fnm/npm shell-script shims resolve correctly.
 
+function spawnViaPowerShell(
+  cmd: string,
+  args: string[],
+  stdinText: string,
+  timeoutMs: number,
+  fixtureId: string,
+): Promise<string> {
+  const shellCmd = [cmd, ...args.map(psq)].join(" ");
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn("powershell.exe", [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-Command",
+      shellCmd,
+    ], { stdio: ["pipe", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, timeoutMs);
+
+    child.stdout.setEncoding("utf-8");
+    child.stderr.setEncoding("utf-8");
+    child.stdout.on("data", (chunk: string) => { stdout += chunk; });
+    child.stderr.on("data", (chunk: string) => { stderr += chunk; });
+
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      rejectPromise(err);
+    });
+
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      if (timedOut) {
+        rejectPromise(new Error(`${cmd} timed out for fixture ${fixtureId}`));
+        return;
+      }
+      if (code !== 0) {
+        rejectPromise(new Error(`${cmd} exited ${code} for ${fixtureId}: ${stderr.trim().slice(0, 300)}`));
+        return;
+      }
+      resolvePromise(stdout);
+    });
+
+    child.stdin.on("error", (err) => {
+      clearTimeout(timer);
+      rejectPromise(err);
+    });
+    child.stdin.write(stdinText);
+    child.stdin.end();
+  });
+}
+
+function spawnViaPowerShellPipeline(
+  cmd: string,
+  args: string[],
+  promptFile: string,
+  timeoutMs: number,
+  fixtureId: string,
+): Promise<string> {
+  const shellCmd = `Get-Content -Raw ${psq(promptFile)} | ${[cmd, ...args.map(psq)].join(" ")}`;
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn("powershell.exe", [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-Command",
+      shellCmd,
+    ], { stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, timeoutMs);
+
+    child.stdout.setEncoding("utf-8");
+    child.stderr.setEncoding("utf-8");
+    child.stdout.on("data", (chunk: string) => { stdout += chunk; });
+    child.stderr.on("data", (chunk: string) => { stderr += chunk; });
+
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      rejectPromise(err);
+    });
+
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      if (timedOut) {
+        rejectPromise(new Error(`${cmd} timed out for fixture ${fixtureId}`));
+        return;
+      }
+      if (code !== 0) {
+        rejectPromise(new Error(`${cmd} exited ${code} for ${fixtureId}: ${stderr.trim().slice(0, 300)}`));
+        return;
+      }
+      resolvePromise(stdout);
+    });
+  });
+}
+
 async function runClaudeCode(input: RunnerInput, model: string): Promise<string> {
   const userText = input.screenshotPath
     ? `${input.userText}\n\nThe screenshot of the rendered UI is saved at: ${input.screenshotPath}\nRead it to assess visual rendering quality.`
@@ -199,16 +314,18 @@ async function runCodex(input: RunnerInput, model: string): Promise<string> {
 
   const tmpDir = mkdtempSync(join(tmpdir(), "eval-judge-"));
   const outputFile = join(tmpDir, "output.txt");
+  const promptFile = join(tmpDir, "prompt.txt");
 
   try {
+    writeFileSync(promptFile, combinedPrompt, "utf-8");
     const args = ["exec", "--ephemeral", "-m", model, "-o", outputFile];
     if (input.screenshotPath) {
       args.push("-i", input.screenshotPath);
     }
 
-    // codex exec reads from stdin when no prompt argument is provided;
-    // invoked via bash -c so shell-script shims resolve correctly
-    const output = await spawnViaBash("codex", args, combinedPrompt, 120_000, input.fixtureId);
+    const output = process.platform === "win32"
+      ? await spawnViaPowerShellPipeline("codex", args, promptFile, 300_000, input.fixtureId)
+      : await spawnViaBash("codex", args, combinedPrompt, 300_000, input.fixtureId);
     void output; // stdout is discarded; real answer is in outputFile
 
     return readFileSync(outputFile, "utf-8");

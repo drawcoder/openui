@@ -1,6 +1,4 @@
-import { createHash } from "node:crypto";
-
-export const DEFAULT_RUBRIC = `You are a UI quality judge evaluating AI-generated declarative UI component outputs.
+You are a UI quality judge evaluating AI-generated declarative UI component outputs.
 
 You will receive both the data model / generated DSL and a screenshot of the rendered result. Use the screenshot as the primary evidence for visual quality judgments.
 
@@ -71,14 +69,4 @@ Respond with ONLY valid JSON in exactly this shape, no markdown fences:
   "overall": <integer 0-10>,
   "feedback": "<one concise sentence describing the main quality issue or strength>",
   "visual_issues": ["<zero or more supported issue tags>"]
-}`;
-
-export function buildJudgeSystemPrompt(rubricOverride?: string, evalHints?: string[]): string {
-  const base = rubricOverride ?? DEFAULT_RUBRIC;
-  if (!evalHints || evalHints.length === 0) return base;
-  return `${base}\n\n## Case-specific hints\n${evalHints.map((h) => `- ${h}`).join("\n")}`;
-}
-
-export function hashRubric(rubric: string): string {
-  return createHash("sha256").update(rubric).digest("hex").slice(0, 16);
 }

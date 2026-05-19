@@ -59,6 +59,20 @@ describe("buildJudgeSystemPrompt", () => {
     expect(DEFAULT_RUBRIC).toContain("feedback must explicitly mention");
   });
 
+  it("documents component-agnostic missing-data penalties for empty renders", () => {
+    expect(DEFAULT_RUBRIC).toContain("wrong data path");
+    expect(DEFAULT_RUBRIC).toContain("hinted path as required evidence");
+    expect(DEFAULT_RUBRIC).toContain("Do not infer that data was surfaced from DSL intent");
+    expect(DEFAULT_RUBRIC).toContain("renders an empty state");
+    expect(DEFAULT_RUBRIC).toContain("hard missing-data failure");
+    expect(DEFAULT_RUBRIC).toContain("data_completeness must be 0");
+    expect(DEFAULT_RUBRIC).toContain("format_quality must be 0");
+    expect(DEFAULT_RUBRIC).toContain("overall must be 3 or below");
+    expect(DEFAULT_RUBRIC).toContain("Column headers, field labels");
+    expect(DEFAULT_RUBRIC).toContain("component-agnostic");
+    expect(DEFAULT_RUBRIC).toContain("tables, lists, cards, descriptions, charts, dashboards");
+  });
+
   it("appends case-specific hints after the base rubric", () => {
     const prompt = buildJudgeSystemPrompt(undefined, ["Use Mbps for bandwidth", "Prefer vertical card scan order"]);
     expect(prompt).toContain("## Case-specific hints");

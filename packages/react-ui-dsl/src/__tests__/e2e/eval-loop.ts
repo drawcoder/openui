@@ -852,7 +852,13 @@ async function cmdCalibrate(argv: string[]): Promise<void> {
   const baselineReportData = readReportData(dirname(getReportDataPath(runId)));
   const baselineScores = baselineReportData.judge_scores ?? [];
 
-  const result = await runCalibration({ runId, pendingCorrections: pendingJudge, updatedRubric, baselineScores });
+  const result = await runCalibration({
+    runId,
+    pendingCorrections: pendingJudge,
+    updatedRubric,
+    baselineScores,
+    baselineEntries: baselineReportData.entries,
+  });
 
   const remaining = corrections.filter(
     (c) => !pendingJudge.some((p) => p.id === c.id),

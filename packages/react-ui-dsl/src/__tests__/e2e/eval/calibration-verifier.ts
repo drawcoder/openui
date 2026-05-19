@@ -12,12 +12,36 @@ export interface CalibrationInput {
   pendingCorrections: CorrectionEntry[];
   updatedRubric: string;
   baselineScores: JudgeScore[];
+  baselineEntries?: CalibrationReportEntry[];
 }
 
 export interface CalibrationResult {
   appliedCount: number;
   failedCount: number;
   updatedCorrections: CorrectionEntry[];
+}
+
+export interface CalibrationReportEntry {
+  id: string;
+  dsl?: string;
+  dataModel: Record<string, unknown>;
+  evalHints?: string[];
+}
+
+export function buildCalibrationJudgeInput(
+  baseline: JudgeScore,
+  baselineEntries: CalibrationReportEntry[] | undefined,
+  updatedRubric: string,
+): Parameters<typeof judgeFixture>[0] {
+  const entry = baselineEntries?.find((e) => e.id === baseline.fixtureId);
+  return {
+    fixtureId: baseline.fixtureId,
+    dsl: entry?.dsl ?? "",
+    dataModel: entry?.dataModel ?? {},
+    screenshotPath: baseline.screenshotPath,
+    rubricOverride: updatedRubric,
+    evalHints: entry?.evalHints,
+  };
 }
 
 export function readCorrections(runId: string): CorrectionEntry[] {
@@ -39,7 +63,7 @@ export function getPendingPromptCorrections(corrections: CorrectionEntry[]): Cor
 }
 
 export async function runCalibration(input: CalibrationInput): Promise<CalibrationResult> {
-  const { pendingCorrections, updatedRubric, baselineScores } = input;
+  const { pendingCorrections, updatedRubric, baselineScores, baselineEntries } = input;
   const rubricHash = hashRubric(updatedRubric);
 
   const baselineMap = new Map(baselineScores.map((s) => [s.fixtureId, s]));
@@ -69,13 +93,7 @@ export async function runCalibration(input: CalibrationInput): Promise<Calibrati
 
     let newScore: JudgeScore;
     try {
-      newScore = await judgeFixture({
-        fixtureId: baseline.fixtureId,
-        dsl: "",
-        dataModel: {},
-        screenshotPath: baseline.screenshotPath,
-        rubricOverride: updatedRubric,
-      });
+      newScore = await judgeFixture(buildCalibrationJudgeInput(baseline, baselineEntries, updatedRubric));
     } catch (err) {
       updatedCorrections.push({
         ...correction,
