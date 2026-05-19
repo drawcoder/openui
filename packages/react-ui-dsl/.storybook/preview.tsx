@@ -1,6 +1,11 @@
 import type { Preview } from "@storybook/react";
 
-if (process.env.REACT_UI_DSL_VIEW_TARGET !== "eview") {
+declare global {
+  // Injected by Storybook's Vite config before the preview module loads.
+  var __REACT_UI_DSL_ENV__: { REACT_UI_DSL_VIEW_TARGET?: string } | undefined;
+}
+
+if (globalThis.__REACT_UI_DSL_ENV__?.REACT_UI_DSL_VIEW_TARGET !== "eview") {
   void import("antd/dist/reset.css");
 }
 
