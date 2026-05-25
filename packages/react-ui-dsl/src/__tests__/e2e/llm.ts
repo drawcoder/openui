@@ -33,7 +33,7 @@ export async function loadOrGenerate(
   if (!apiKey) {
     throw new Error(
       `Snapshot missing for "${id}" and LLM_API_KEY is not set. ` +
-        `Run: REGEN_SNAPSHOTS=1 LLM_API_KEY=<key> pnpm test:e2e:regen`,
+        `Check that packages/react-ui-dsl/.env contains LLM_API_KEY, then run: REGEN_SNAPSHOTS=1 pnpm test:e2e:regen`,
     );
   }
 

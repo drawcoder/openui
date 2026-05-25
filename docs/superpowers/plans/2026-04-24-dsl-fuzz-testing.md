@@ -74,7 +74,7 @@ export async function loadOrGenerate(
   if (!apiKey) {
     throw new Error(
       `Snapshot missing for "${id}" and LLM_API_KEY is not set. ` +
-        `Run: REGEN_SNAPSHOTS=1 LLM_API_KEY=<key> pnpm test:e2e:regen`,
+        `Check that packages/react-ui-dsl/.env contains LLM_API_KEY, then run: REGEN_SNAPSHOTS=1 pnpm test:e2e:regen`,
     );
   }
 
@@ -391,7 +391,7 @@ git commit -m "test(react-ui-dsl): add first fuzz data sample and snapshot"
 To add more fuzz cases from your API data:
 
 1. Drop a `.json` file into `fuzz-data/` — name it `{component}-{description}.json`
-2. Run: `LLM_API_KEY=<key> pnpm test:fuzz:regen`
+2. Run: `pnpm test:fuzz:regen`  *(API key 已配置在 `.env` 中)*
 3. Commit both the `.json` and the generated `.dsl` snapshot
 4. Future runs: `pnpm test:fuzz` replays snapshots with no LLM call
 
