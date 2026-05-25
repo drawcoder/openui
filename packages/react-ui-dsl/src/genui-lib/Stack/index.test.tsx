@@ -1,9 +1,7 @@
 import React from "react";
 import { describe, expect, it } from "vitest";
 import { dslLibrary } from "../dslLibrary";
-import { Stack } from ".";
-import { StackSchema } from "./schema";
-import { StackView } from "./view";
+import { Stack, StackSchema } from "./index";
 
 describe("Stack schema", () => {
   it("accepts valid props", () => {
@@ -24,15 +22,11 @@ describe("Stack schema", () => {
   });
 
   it("rejects invalid direction value", () => {
-    expect(
-      StackSchema.safeParse({ direction: "diagonal" }).success,
-    ).toBe(false);
+    expect(StackSchema.safeParse({ direction: "diagonal" }).success).toBe(false);
   });
 
   it("rejects numeric gap", () => {
-    expect(
-      StackSchema.safeParse({ gap: 16 }).success,
-    ).toBe(false);
+    expect(StackSchema.safeParse({ gap: 16 }).success).toBe(false);
   });
 
   it("keeps direction as second positional arg in signature", () => {
@@ -47,9 +41,9 @@ describe("Stack renderer", () => {
       props: { children: ["A"], gap: "m" },
       renderNode: (v) => v as React.ReactNode,
     });
-    expect(rendered.type).toBe(StackView);
-    expect(rendered.props.vertical).toBe(true);
-    expect(rendered.props.gap).toBe(12);
+    expect(rendered.type).toBe("div");
+    expect(rendered.props.style.flexDirection).toBe("column");
+    expect(rendered.props.style.gap).toBe("0.75rem");
   });
 
   it("renders row direction when direction is row", () => {
@@ -57,25 +51,62 @@ describe("Stack renderer", () => {
       props: { children: ["A"], direction: "row", gap: "l" },
       renderNode: (v) => v as React.ReactNode,
     });
-    expect(rendered.type).toBe(StackView);
-    expect(rendered.props.vertical).toBe(false);
-    expect(rendered.props.gap).toBe(18);
+    expect(rendered.type).toBe("div");
+    expect(rendered.props.style.flexDirection).toBe("row");
+    expect(rendered.props.style.gap).toBe("1.125rem");
   });
 
-  it("maps gap token l to 18px", () => {
+  it("maps gap token l to 1.125rem", () => {
     const rendered = Stack.component({
       props: { gap: "l" },
       renderNode: (v) => v as React.ReactNode,
     });
-    expect(rendered.props.gap).toBe(18);
+    expect(rendered.props.style.gap).toBe("1.125rem");
   });
 
-  it("passes wrap prop through", () => {
+  it("defaults gap to 0.75rem when not specified", () => {
+    const rendered = Stack.component({
+      props: {},
+      renderNode: (v) => v as React.ReactNode,
+    });
+    expect(rendered.props.style.gap).toBe("0.75rem");
+  });
+
+  it("sets flexWrap when wrap is true", () => {
     const rendered = Stack.component({
       props: { wrap: true },
       renderNode: (v) => v as React.ReactNode,
     });
-    expect(rendered.props.wrap).toBe(true);
+    expect(rendered.props.style.flexWrap).toBe("wrap");
+  });
+
+  it("falls back justifyContent to flex-start when wrap=true and justify=between", () => {
+    const rendered = Stack.component({
+      props: { wrap: true, justify: "between" },
+      renderNode: (v) => v as React.ReactNode,
+    });
+    expect(rendered.props.style.justifyContent).toBe("flex-start");
+  });
+
+  it("keeps justify=between as space-between when wrap is not set", () => {
+    const rendered = Stack.component({
+      props: { justify: "between" },
+      renderNode: (v) => v as React.ReactNode,
+    });
+    expect(rendered.props.style.justifyContent).toBe("space-between");
+  });
+});
+
+describe("Stack description", () => {
+  it("matches exact spec description for LLM", () => {
+    expect(Stack.description).toBe(
+      'Flex container. direction: "row"|"column" (default "column"). gap: "none"|"xs"|"s"|"m"|"l"|"xl"|"2xl" (default "m"). align: "start"|"center"|"end"|"stretch"|"baseline". justify: "start"|"center"|"end"|"between"|"around"|"evenly".',
+    );
+  });
+
+  it("description contains default column and default m", () => {
+    expect(Stack.description).toContain('default "column"');
+    expect(Stack.description).toContain('default "m"');
   });
 });
 
