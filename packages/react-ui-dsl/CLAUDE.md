@@ -26,7 +26,9 @@ If an e2e test fails:
 
 ```bash
 # From this directory:
-LLM_API_KEY=<key> pnpm test:e2e:regen
+pnpm test:e2e:regen
 ```
+
+> **Note:** API keys and LLM configuration (`LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`) are already set in `packages/react-ui-dsl/.env`. Do **not** ask the user to provide a key — just run the command directly.
 
 The regen script calls the LLM with the fixture prompt and overwrites the snapshot. That is the only correct way to update these files.

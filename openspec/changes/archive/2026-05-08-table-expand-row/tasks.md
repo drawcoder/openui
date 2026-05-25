@@ -20,5 +20,5 @@
 
 - [x] 4.1 Run `pnpm build` in `packages/react-ui-dsl` and confirm no type errors
 - [x] 4.2 Run `pnpm test` in `packages/react-ui-dsl` and confirm all tests pass
-- [x] 4.3 Regenerate `array-with-nested-arrays` benchmark snapshot via `REGEN_SNAPSHOTS=1 LLM_API_KEY=<key> pnpm test:e2e:regen` — do NOT manually edit the `.dsl` file
+- [x] 4.3 Regenerate `array-with-nested-arrays` benchmark snapshot via `REGEN_SNAPSHOTS=1 pnpm test:e2e:regen` — do NOT manually edit the `.dsl` file
 - [x] 4.4 Run `pnpm eval start --suite benchmark` and confirm `array-with-nested-arrays` score improves from 4 → ≥7
