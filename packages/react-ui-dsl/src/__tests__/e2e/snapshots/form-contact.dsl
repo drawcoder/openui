@@ -1,4 +1,13 @@
 root = Stack([contactForm])
-contactForm = Form([fullNameField, emailField], "vertical")
-fullNameField = {label: "Full Name", name: "fullName", rules: [{required: true}], component: "text"}
-emailField = {label: "Email Address", name: "email", component: "email"}
+contactForm = Form([
+  {
+    label: "Full Name",
+    name: "fullName",
+    component: Input("Enter your full name", "", false, false, "medium", false, "text")
+  },
+  {
+    label: "Email Address",
+    name: "email",
+    component: Input("Enter your email address", "", false, false, "medium", false, "email")
+  }
+], "vertical", "left")
