@@ -1,6 +1,6 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
-import { createViewTargetAliases } from "./view-target.config.ts";
+import { reactUiDslViewTargetPlugin } from "./view-target.config.ts";
 
 const FUZZ_TEST_PATH = "src/__tests__/e2e/dsl-fuzz.test.tsx";
 const BENCHMARK_TEST_PATH = "src/__tests__/e2e/dsl-benchmark.test.tsx";
@@ -20,9 +20,9 @@ export function getTestExcludePatterns(env: NodeJS.ProcessEnv = process.env): st
 }
 
 export default defineConfig({
+  plugins: [reactUiDslViewTargetPlugin()].filter(Boolean),
   resolve: {
     alias: {
-      ...createViewTargetAliases(),
       "@openuidev/lang-core": path.resolve(__dirname, "../lang-core/src/index.ts"),
       "@openuidev/react-lang": path.resolve(__dirname, "../react-lang/src/index.ts"),
     },

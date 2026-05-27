@@ -1,7 +1,7 @@
 import type { StorybookConfig } from "@storybook/react-vite";
 import path from "path";
 import { mergeConfig } from "vite";
-import { createViewTargetAliases } from "../view-target.config.ts";
+import { reactUiDslViewTargetPlugin } from "../view-target.config.ts";
 
 const reactUiDslEnv = {
   REACT_UI_DSL_VIEW_TARGET: process.env.REACT_UI_DSL_VIEW_TARGET,
@@ -18,12 +18,12 @@ const config: StorybookConfig = {
   `,
   viteFinal: async (config) =>
     mergeConfig(config, {
+      plugins: [reactUiDslViewTargetPlugin(path.resolve(__dirname, ".."))].filter(Boolean),
       server: {
         allowedHosts: [".trycloudflare.com", "127.0.0.1", "localhost"],
       },
       resolve: {
         alias: {
-          ...createViewTargetAliases(path.resolve(__dirname, "..")),
           "@openuidev/react-lang": path.resolve(__dirname, "../../react-lang/src/index.ts"),
           "@openuidev/lang-core": path.resolve(__dirname, "../../lang-core/src/index.ts"),
         },
