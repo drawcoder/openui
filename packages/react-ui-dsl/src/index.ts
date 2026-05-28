@@ -1,4 +1,11 @@
-export { dslLibrary } from "./genui-lib/dslLibrary";
+export * from "@openuidev/react-lang";
+
+export {
+  DEFAULT_PROMPT_ADDITIONAL_RULES,
+  DEFAULT_PROMPT_EXAMPLES,
+  dslComponentGroups,
+  dslLibrary,
+} from "./genui-lib/dslLibrary";
 export { Button } from "./genui-lib/Button";
 export { Card } from "./genui-lib/Card";
 export { CardHeader } from "./genui-lib/CardHeader";

@@ -150,7 +150,7 @@ export const dslComponentGroups: ComponentGroup[] = [
 
 // ── Global rules (cross-cutting; not tied to a single component) ──
 
-const DEFAULT_PROMPT_ADDITIONAL_RULES = [
+export const DEFAULT_PROMPT_ADDITIONAL_RULES = [
   "Never use JavaScript conversion constructors or APIs such as String(...), Number(...), Boolean(...), Date(...), or Math.*. Use string concatenation and openui-lang builtins (@FormatNumber, @FormatDate, @Round, @Floor, @Ceil) instead.",
   "Use @FormatDate, @FormatBytes, @FormatNumber, @FormatPercent, @FormatDuration for display formatting. Byte-count fields (`bytes`, `*Bytes`, `inBytes`, `outBytes`, `totalBytes`, `usedBytes`, or rows with `unit: \"bytes\"`) → @FormatBytes. Rate fields (`bandwidth`, `bps`, `bitrate`, `bitsPerSecond`) are bits-per-second, NOT bytes — format as Mbps/Gbps with @FormatNumber plus a unit suffix. Ratios like `used/total`, `usedBytes/totalBytes`, `active/total` → @FormatPercent. Do not divide cumulative byte totals by bandwidth/bitrate to fake utilization unless the data provides a matching time window.",
   "Never hardcode data values from the data model — always reference fields via data paths or derived variables. Accessing a field on an array extracts that field from every element: `filteredRows.fieldName` returns an array of values, useful for building Series.",
@@ -161,7 +161,7 @@ const DEFAULT_PROMPT_ADDITIONAL_RULES = [
 
 // ── Examples (8 core patterns) ──
 
-const DEFAULT_PROMPT_EXAMPLES = [
+export const DEFAULT_PROMPT_EXAMPLES = [
   // Table with Render binders, Switch, Link, FormatDate
   `root = Stack([employeeTable])
 employeeTable = Table([nameCol, salaryCol, joinedCol, statusCol], data.employees)
