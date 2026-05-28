@@ -1,7 +1,7 @@
 import { marked } from 'marked';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/github.css';
-import 'github-markdown-css/github-markdown.css';
+import './vendor/hljs-github.css';
+import './vendor/github-markdown.css';
 import { sanitize } from './helpers/sanitize';
 
 const EMAIL_PROTO = 'mailto:';
