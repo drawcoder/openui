@@ -15,21 +15,6 @@ export function InputView(props: InputViewProps) {
   const status = props.hasError ? "error" : undefined;
   const style = { width: "100%", ...props.style };
 
-  if (props.type === "password") {
-    return (
-      <AntInput.Password
-        defaultValue={props.defaultValue}
-        disabled={props.disabled}
-        maxLength={props.maxLength}
-        placeholder={props.placeholder}
-        readOnly={props.readOnly}
-        size={size}
-        status={status}
-        style={style}
-      />
-    );
-  }
-
   return (
     <AntInput
       defaultValue={props.defaultValue}
@@ -40,7 +25,6 @@ export function InputView(props: InputViewProps) {
       size={size}
       status={status}
       style={style}
-      type={props.type}
     />
   );
 }

@@ -12,10 +12,6 @@ const meta = {
       control: "select",
       options: ["small", "medium", "large"],
     },
-    type: {
-      control: "select",
-      options: ["text", "password", "email", "number", "tel", "url", "search"],
-    },
     style: {
       control: "object",
     },
@@ -59,16 +55,8 @@ export const ReadOnly: Story = {
   },
 };
 
-export const Password: Story = {
+export const WithMaxLength: Story = {
   args: {
-    type: "password",
-    defaultValue: "hunter2",
-  },
-};
-
-export const Number: Story = {
-  args: {
-    type: "number",
     maxLength: 6,
     placeholder: "0",
   },

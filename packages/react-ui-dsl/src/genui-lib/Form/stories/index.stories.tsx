@@ -66,7 +66,7 @@ export const WithDSLInputs: Story = {
           required: true,
         },
         {
-          component: <InputView placeholder="name@example.com" type="email" />,
+          component: <InputView placeholder="name@example.com" />,
           label: "Email",
           name: "email",
         },

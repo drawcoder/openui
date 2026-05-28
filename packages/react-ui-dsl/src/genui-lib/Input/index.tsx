@@ -18,7 +18,6 @@ export const Input = defineComponent({
       placeholder={props.placeholder}
       readOnly={props.readOnly}
       size={props.size}
-      type={props.type}
     />
   ),
 });
