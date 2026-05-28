@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, expect, it } from "vitest";
-import { MarkdownView } from ".";
+import { MarkdownView } from "./index.js";
 import ReactMarkdown from "react-markdown";
 
 describe("MarkdownView", () => {

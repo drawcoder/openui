@@ -2,7 +2,7 @@
 
 import { type ComponentRenderProps, defineComponent } from "@openuidev/react-lang";
 import { z } from "zod";
-import { MarkdownView } from "../Components/MarkdownView";
+import { MarkdownView } from "../../components/MarkdownView";
 import { TextContentSchema } from "./schema";
 import styles from "./textContent.module.css";
 
