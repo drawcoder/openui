@@ -30,6 +30,7 @@
     "test:eview": "cross-env REACT_UI_DSL_VIEW_TARGET=eview REGEN_SNAPSHOTS=0 vitest run --config vitest.config.ts",
     "test:e2e": "cross-env REGEN_SNAPSHOTS=0 vitest run src/__tests__/e2e",
     "test:e2e:report": "node ./src/__tests__/e2e/report-cli.mjs",
+    "test:e2e:report:eview": "cross-env REACT_UI_DSL_VIEW_TARGET=eview node ./src/__tests__/e2e/report-cli.mjs",
     "test:e2e:regen": "cross-env REGEN_SNAPSHOTS=1 vitest run src/__tests__/e2e",
     "test:e2e:regen:fixture": "cross-env REGEN_SNAPSHOTS=1 vitest run src/__tests__/e2e/dsl-e2e.test.tsx",
     "test:fuzz": "cross-env REGEN_SNAPSHOTS=0 REACT_UI_DSL_E2E_SUITE=fuzz vitest run src/__tests__/e2e/dsl-fuzz.test.tsx",

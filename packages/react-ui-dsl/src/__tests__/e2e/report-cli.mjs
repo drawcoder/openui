@@ -16,6 +16,44 @@ const REPORT_FLAG = "REACT_UI_DSL_E2E_REPORT";
 const REPORT_DIR_FLAG = "REACT_UI_DSL_E2E_REPORT_DIR";
 const REGEN_SNAPSHOTS_FLAG = "REGEN_SNAPSHOTS";
 const SUITE_FLAG = "REACT_UI_DSL_E2E_SUITE";
+
+// JS mirror of `reactUiDslViewTargetPlugin` in ../../../view-target.config.ts.
+// This file runs under plain `node`, which cannot import the `.ts` config, so
+// the eview view-target remap is reproduced here for the report-app vite build.
+// Keep VIEW_COMPONENTS in sync with view-target.config.ts.
+const VIEW_COMPONENTS = ["Button", "Form", "Link", "Select", "Table", "Tabs", "Tag", "TimeLine"];
+
+function getReactUiDslViewTarget(env = process.env) {
+  return env.REACT_UI_DSL_VIEW_TARGET === "eview" ? "eview" : "antd";
+}
+
+function normalizeIdForMatch(id) {
+  let normalized = id.replace(/[?#].*$/, "").replace(/\\/g, "/");
+  if (process.platform === "win32") normalized = normalized.toLowerCase();
+  return normalized;
+}
+
+function reactUiDslViewTargetPlugin(rootDir, target = getReactUiDslViewTarget()) {
+  if (target !== "eview") return null;
+
+  const lookup = new Map();
+  for (const component of VIEW_COMPONENTS) {
+    const viewDir = resolve(rootDir, "src", "genui-lib", component, "view");
+    const replacement = resolve(viewDir, "eview.tsx");
+    lookup.set(normalizeIdForMatch(resolve(viewDir, "index.tsx")), replacement);
+    lookup.set(normalizeIdForMatch(resolve(viewDir, "index")), replacement);
+  }
+
+  return {
+    name: "react-ui-dsl-view-target",
+    enforce: "pre",
+    async resolveId(source, importer, options) {
+      const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
+      if (!resolved) return null;
+      return lookup.get(normalizeIdForMatch(resolved.id)) ?? null;
+    },
+  };
+}
 const CONTENT_TYPES = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -137,6 +175,7 @@ async function buildReportApp(reportDir, reportDataPath) {
     configFile: false,
     publicDir: false,
     root: reportAppRoot,
+    plugins: [reactUiDslViewTargetPlugin(packageRoot)].filter(Boolean),
     resolve: {
       alias: {
         "@openuidev/lang-core": resolve(workspaceRoot, "packages/lang-core/src/index.ts"),
