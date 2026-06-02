@@ -22,7 +22,7 @@ const SUITE_FLAG = "REACT_UI_DSL_E2E_SUITE";
 // under plain `node`, which cannot import the `.ts` config, so the eview
 // view-target remap is reproduced here for the report-app vite build.
 // Keep VIEW_COMPONENTS in sync with view-target.config.ts.
-const VIEW_COMPONENTS = ["Button", "Form", "Link", "Select", "Table", "Tabs", "Tag", "TimeLine"];
+const VIEW_COMPONENTS = ["Button", "Form", "Input", "Link", "Select", "Table", "Tabs", "Tag", "TimeLine"];
 
 // Global stylesheet imported by report-app/main.tsx via the virtual module below.
 // antd v5 is CSS-in-JS (no global import); eview needs its design-system styles.
@@ -201,6 +201,13 @@ async function buildReportApp(reportDir, reportDataPath) {
     build: {
       emptyOutDir: false,
       outDir: reportDir,
+      // The eview global stylesheet is a side-effect-only `.less` import. Libraries
+      // that ship `"sideEffects": false` (e.g. @cloudsop/eview-ui) would otherwise
+      // let rollup tree-shake it away, leaving eview components unstyled. This is a
+      // report artifact — bundle size is irrelevant — so keep all side effects.
+      rollupOptions: {
+        treeshake: { moduleSideEffects: true },
+      },
     },
   });
 

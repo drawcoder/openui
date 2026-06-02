@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, expect, it } from "vitest";
 import { TextContent } from ".";
-import { MarkdownView } from "../Components/MarkdownView";
+import { MarkdownView } from "../../components/MarkdownView";
 import { dslLibrary } from "../dslLibrary";
 
 describe("TextContent renderer", () => {

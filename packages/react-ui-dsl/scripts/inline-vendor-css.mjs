@@ -13,7 +13,9 @@ const TARGETS = [
     dest: path.join(PKG_ROOT, 'src/components/MarkdownView/vendor/hljs-github.css'),
   },
   {
-    src: require.resolve('github-markdown-css/github-markdown.css'),
+    // Light-only variant: no `@media (prefers-color-scheme: dark)` block, so the
+    // markdown never follows the OS into dark mode. We have no theme switching yet.
+    src: require.resolve('github-markdown-css/github-markdown-light.css'),
     dest: path.join(PKG_ROOT, 'src/components/MarkdownView/vendor/github-markdown.css'),
   },
 ];
