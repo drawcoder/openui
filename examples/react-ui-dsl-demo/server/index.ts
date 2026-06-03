@@ -12,7 +12,7 @@ if (!process.env.LLM_API_KEY) {
 const app = express();
 const PORT = 3001;
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 const httpAgent = process.env.HTTPS_PROXY
