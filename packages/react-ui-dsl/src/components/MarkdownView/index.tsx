@@ -2,6 +2,7 @@ import { marked } from 'marked';
 import hljs from 'highlight.js';
 import './vendor/hljs-github.css';
 import './vendor/github-markdown.css';
+import './theme-override.css';
 import { sanitize } from './helpers/sanitize';
 
 const EMAIL_PROTO = 'mailto:';

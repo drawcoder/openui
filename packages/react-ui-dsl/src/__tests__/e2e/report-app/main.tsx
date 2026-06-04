@@ -2,6 +2,9 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { Renderer } from "@openuidev/react-lang";
 import { dslLibrary } from "@openuidev/react-ui-dsl";
+// Per-target global stylesheet, resolved by the report-app vite build:
+// empty for antd (CSS-in-JS), eview design-system .less for eview.
+import "virtual:react-ui-dsl-view-styles";
 import "./styles.css";
 
 type JudgeScore = {

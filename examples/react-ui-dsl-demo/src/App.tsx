@@ -129,48 +129,32 @@ function renderLangTab(editedLang: string, isStreaming: boolean, setEditedLang: 
     );
   }
 
-  if (editedLang) {
-    return (
-      <textarea
-        value={editedLang}
-        onChange={(e) => setEditedLang(e.target.value)}
-        spellCheck={false}
-        style={{
-          display: "block",
-          width: "100%",
-          height: "100%",
-          margin: 0,
-          padding: 0,
-          border: "none",
-          outline: "none",
-          resize: "none",
-          background: "transparent",
-          fontFamily: mono,
-          fontSize: 12.5,
-          lineHeight: 1.65,
-          color: C.codeText,
-          whiteSpace: "pre",
-          overflowWrap: "normal",
-          boxSizing: "border-box",
-        }}
-      />
-    );
-  }
-
   return (
-    <pre
+    <textarea
+      aria-label="Open Lang"
+      value={editedLang}
+      onChange={(e) => setEditedLang(e.target.value)}
+      placeholder="// DSL will stream here"
+      spellCheck={false}
       style={{
+        display: "block",
+        width: "100%",
+        height: "100%",
         margin: 0,
+        padding: 0,
+        border: "none",
+        outline: "none",
+        resize: "none",
+        background: "transparent",
         fontFamily: mono,
         fontSize: 12.5,
         lineHeight: 1.65,
         color: C.codeText,
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-all",
+        whiteSpace: "pre",
+        overflowWrap: "normal",
+        boxSizing: "border-box",
       }}
-    >
-      <span style={{ color: C.codeMuted, fontStyle: "italic" }}>// DSL will stream here</span>
-    </pre>
+    />
   );
 }
 
@@ -277,7 +261,7 @@ export function App() {
   const parsedJson = useMemo(() => {
     if (!debouncedLang) return null;
     try {
-      const parser = createParser(dslLibrary);
+      const parser = createParser(dslLibrary.toJSONSchema());
       return parser.parse(debouncedLang);
     } catch {
       return null;

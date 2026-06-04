@@ -1,4 +1,5 @@
-import { filterXSS, FilterXSS, escapeAttrValue, friendlyAttrValue } from 'xss';
+import xss from 'xss';
+const { filterXSS, FilterXSS, escapeAttrValue, friendlyAttrValue } = xss;
 
 // 创建属性配置的辅助函数
 const createAttrs = (base: string[], additional: string[] = []): string[] => {

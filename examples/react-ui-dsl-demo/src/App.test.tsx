@@ -3,17 +3,25 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
-const mockPrompt = vi.fn();
-const mockParse = vi.fn(() => ({ root: "ok" }));
+const { mockPrompt, mockParse, mockSchema, mockCreateParser } = vi.hoisted(() => {
+  const parse = vi.fn(() => ({ root: "ok" }));
+  return {
+    mockPrompt: vi.fn(),
+    mockParse: parse,
+    mockSchema: { $defs: { Stack: { properties: {}, required: [] } } },
+    mockCreateParser: vi.fn(() => ({ parse })),
+  };
+});
 
 vi.mock("@openuidev/react-lang", () => ({
   Renderer: () => <div>rendered</div>,
-  createParser: () => ({ parse: mockParse }),
+  createParser: mockCreateParser,
 }));
 
 vi.mock("@openuidev/react-ui-dsl", () => ({
   dslLibrary: {
     prompt: (...args: unknown[]) => mockPrompt(...args),
+    toJSONSchema: () => mockSchema,
   },
 }));
 
@@ -32,6 +40,7 @@ describe("App system prompt tab", () => {
     localStorage.clear();
     mockPrompt.mockReset();
     mockParse.mockClear();
+    mockCreateParser.mockClear();
     mockPrompt.mockImplementation((options?: { dataModel?: { raw: Record<string, unknown> } }) =>
       options?.dataModel ? `system:${JSON.stringify(options.dataModel.raw)}` : "system:{}",
     );
@@ -72,6 +81,18 @@ describe("App system prompt tab", () => {
 
     await waitFor(() => {
       expect((promptEditor as HTMLTextAreaElement).value).toBe("custom system prompt");
+    });
+  });
+
+  it("allows entering open lang before generating", async () => {
+    render(<App />);
+
+    const langEditor = screen.getByRole("textbox", { name: "Open Lang" });
+    fireEvent.change(langEditor, { target: { value: "root = Stack([])" } });
+
+    await waitFor(() => {
+      expect(mockCreateParser).toHaveBeenCalledWith(mockSchema);
+      expect(mockParse).toHaveBeenCalledWith("root = Stack([])");
     });
   });
 });
