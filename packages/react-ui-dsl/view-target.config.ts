@@ -6,6 +6,7 @@ const CONFIG_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 const VIEW_COMPONENTS = [
   "Button",
+  "Input",
   "Form",
   "Link",
   "Select",
