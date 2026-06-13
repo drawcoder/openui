@@ -219,8 +219,8 @@ describe("PreviewCard + canvasStore integration", () => {
   });
 
   it("PreviewCard with tabId replaces when type=replace", () => {
-    canvasStore.addPreviewCard({ title: "X", children: [], tabId: "tab-x" });
-    canvasStore.addPreviewCard({ title: "X", children: [], url: "https://new.com", iframeId: "new", tabId: "tab-x", type: "replace" });
+    canvasStore.addPreviewCard({ title: "X", children: [] }, "tab-x");
+    canvasStore.addPreviewCard({ title: "X", children: [], url: "https://new.com", iframeId: "new" }, "tab-x", "replace");
 
     const snapshot = canvasStore.getSnapshot();
     expect(snapshot.previewTabs).toHaveLength(1);
@@ -228,8 +228,8 @@ describe("PreviewCard + canvasStore integration", () => {
   });
 
   it("PreviewCard with tabId appends children when type=append", () => {
-    canvasStore.addPreviewCard({ title: "X", children: [{ typeName: "Table" }], tabId: "tab-x" });
-    canvasStore.addPreviewCard({ title: "Extra", children: [{ typeName: "Chart" }], tabId: "tab-x" });
+    canvasStore.addPreviewCard({ title: "X", children: [{ typeName: "Table" }] }, "tab-x");
+    canvasStore.addPreviewCard({ title: "Extra", children: [{ typeName: "Chart" }] }, "tab-x");
 
     const snapshot = canvasStore.getSnapshot();
     expect(snapshot.previewTabs).toHaveLength(1);
@@ -237,8 +237,8 @@ describe("PreviewCard + canvasStore integration", () => {
   });
 
   it("PreviewCard with unknown tabId creates new tab", () => {
-    canvasStore.addPreviewCard({ title: "A", children: [], tabId: "tab-a" });
-    canvasStore.addPreviewCard({ title: "B", children: [], tabId: "tab-b" });
+    canvasStore.addPreviewCard({ title: "A", children: [] }, "tab-a");
+    canvasStore.addPreviewCard({ title: "B", children: [] }, "tab-b");
 
     const snapshot = canvasStore.getSnapshot();
     expect(snapshot.previewTabs).toHaveLength(2);

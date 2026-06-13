@@ -61,8 +61,8 @@ describe("canvasStore", () => {
     });
 
     it("replaces tab when tabId exists and type=replace", () => {
-      canvasStore.addPreviewCard({ title: "Device List", children: [], tabId: "device-tab" });
-      canvasStore.addPreviewCard({ title: "Device List", children: [], url: "https://x.com", iframeId: "x", tabId: "device-tab", type: "replace" });
+      canvasStore.addPreviewCard({ title: "Device List", children: [] }, "device-tab");
+      canvasStore.addPreviewCard({ title: "Device List", children: [], url: "https://x.com", iframeId: "x" }, "device-tab", "replace");
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs).toHaveLength(1);
@@ -71,8 +71,8 @@ describe("canvasStore", () => {
     });
 
     it("appends children to existing tab when tabId exists and type=append", () => {
-      canvasStore.addPreviewCard({ title: "Device List", children: [{ typeName: "Table" }], tabId: "device-tab" });
-      canvasStore.addPreviewCard({ title: "Extra", children: [{ typeName: "Chart" }], tabId: "device-tab" });
+      canvasStore.addPreviewCard({ title: "Device List", children: [{ typeName: "Table" }] }, "device-tab");
+      canvasStore.addPreviewCard({ title: "Extra", children: [{ typeName: "Chart" }] }, "device-tab");
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs).toHaveLength(1);
@@ -81,8 +81,8 @@ describe("canvasStore", () => {
     });
 
     it("creates new tab when tabId provided but not found", () => {
-      canvasStore.addPreviewCard({ title: "Device List", children: [], tabId: "device-tab" });
-      canvasStore.addPreviewCard({ title: "Network", children: [], tabId: "network-tab" });
+      canvasStore.addPreviewCard({ title: "Device List", children: [] }, "device-tab");
+      canvasStore.addPreviewCard({ title: "Network", children: [] }, "network-tab");
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs).toHaveLength(2);
@@ -90,7 +90,7 @@ describe("canvasStore", () => {
     });
 
     it("uses provided tabId when creating new tab", () => {
-      canvasStore.addPreviewCard({ title: "Device List", children: [], tabId: "my-custom-id" });
+      canvasStore.addPreviewCard({ title: "Device List", children: [] }, "my-custom-id");
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs[0].tabId).toBe("my-custom-id");

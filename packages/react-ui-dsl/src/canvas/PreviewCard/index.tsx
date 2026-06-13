@@ -33,15 +33,17 @@ export const PreviewCard = defineComponent({
   }: ComponentRenderProps<z.infer<typeof PreviewCardSchema>>) => {
     const handleClick = () => {
       const loaderInfo = extractHtmlLoaderInfo(props.children);
-      canvasStore.addPreviewCard({
-        title: props.title,
-        children: props.children,
-        url: loaderInfo?.url,
-        iframeId: loaderInfo?.iframeId,
-        data: loaderInfo?.data,
-        type: props.type,
-        tabId: props.tabId,
-      });
+      canvasStore.addPreviewCard(
+        {
+          title: props.title,
+          children: props.children,
+          url: loaderInfo?.url,
+          iframeId: loaderInfo?.iframeId,
+          data: loaderInfo?.data,
+        },
+        props.tabId,
+        props.type,
+      );
     };
 
     const summaryContent = props.summary ? renderNode(props.summary) : null;

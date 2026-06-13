@@ -26,7 +26,7 @@ export interface CanvasStore {
   activeKey: string;
   
   addDashboardCard(card: Omit<DashboardCardData, "cardId">, tabId?: string): string;
-  addPreviewCard(card: Omit<PreviewTabData, "tabId"> & { tabId?: string; type?: "replace" | "append" }): void;
+  addPreviewCard(card: Omit<PreviewTabData, "tabId">, tabId?: string, type?: "replace" | "append"): void;
   removeDashboardCard(tabId: string, cardId: string): void;
   removeDashboardTab(tabId: string): void;
   removePreviewTab(tabId: string): void;
@@ -93,17 +93,18 @@ function createCanvasStoreInternal(): CanvasStore {
       notify();
       return cardId;
     },
-    addPreviewCard(card): void {
-      const existingTabIndex = card.tabId
-        ? state.previewTabs.findIndex(t => t.tabId === card.tabId)
+    addPreviewCard(card, tabId, type = "append"): void {
+      const resolvedTabId = tabId ?? generateTabId();
+      const existingTabIndex = tabId
+        ? state.previewTabs.findIndex(t => t.tabId === tabId)
         : -1;
 
       if (existingTabIndex >= 0) {
-        if (card.type === "replace") {
+        if (type === "replace") {
           state.previewTabs[existingTabIndex] = {
             title: card.title ?? state.previewTabs[existingTabIndex].title,
             children: card.children,
-            tabId: card.tabId!,
+            tabId: tabId!,
             url: card.url ?? state.previewTabs[existingTabIndex].url,
             iframeId: card.iframeId ?? state.previewTabs[existingTabIndex].iframeId,
             data: card.data ?? state.previewTabs[existingTabIndex].data,
@@ -114,19 +115,18 @@ function createCanvasStoreInternal(): CanvasStore {
             children: [...state.previewTabs[existingTabIndex].children, ...card.children],
           };
         }
-        state.activeKey = card.tabId!;
+        state.activeKey = tabId!;
       } else {
-        const newTabId = card.tabId ?? generateTabId();
         const newTab: PreviewTabData = {
           title: card.title,
           children: card.children,
-          tabId: newTabId,
+          tabId: resolvedTabId,
           url: card.url,
           iframeId: card.iframeId,
           data: card.data,
         };
         state.previewTabs.push(newTab);
-        state.activeKey = newTabId;
+        state.activeKey = resolvedTabId;
       }
       notify();
     },
