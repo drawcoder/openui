@@ -60,7 +60,6 @@ function App() {
 
   const handleAddPreviewCard = useCallback((dsl: string, title: string) => {
     const children = parseDslToChildren(dsl);
-    console.log('11111111111', children)
     if (children) {
       canvasStore.addPreviewTab({ title, children });
     }
