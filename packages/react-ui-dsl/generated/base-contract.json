@@ -157,6 +157,10 @@
     "Tabs": {
       "signature": "Tabs(items: {value: string, label: string, content: any[]}[], style?: Record<string, any>)",
       "description": "Tabbed container with streaming-aware skeleton and auto tab-switching"
+    },
+    "Piu": {
+      "signature": "Piu(name: string, eventName?: string, destroy?: boolean, param: Record<string, any>)",
+      "description": "Piu component placeholder — implementation to be added later"
     }
   },
   "componentGroups": [
