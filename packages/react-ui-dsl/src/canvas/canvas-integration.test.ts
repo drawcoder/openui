@@ -71,6 +71,18 @@ describe("PreviewCard schema", () => {
     }
   });
 
+  it("accepts optional type", () => {
+    const result = PreviewCardSchema.safeParse({
+      children: [],
+      title: "Preview",
+      type: "replace",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.type).toBe("replace");
+    }
+  });
+
   it("rejects unknown props", () => {
     expect(PreviewCardSchema.safeParse({ children: [], title: "X", url: "bad" }).success).toBe(false);
   });
@@ -194,9 +206,17 @@ describe("PreviewCard + canvasStore integration", () => {
     expect(snapshot.previewTabs[0].data).toEqual({ theme: "dark" });
   });
 
-  it("PreviewCard with same title replaces existing preview tab", () => {
+  it("PreviewCard with same title appends by default", () => {
     canvasStore.addPreviewTab({ title: "X", children: [] });
     canvasStore.addPreviewTab({ title: "X", children: [], url: "https://new.com", iframeId: "new" });
+
+    const snapshot = canvasStore.getSnapshot();
+    expect(snapshot.previewTabs).toHaveLength(2);
+  });
+
+  it("PreviewCard with same title replaces when type=replace", () => {
+    canvasStore.addPreviewTab({ title: "X", children: [], type: "replace" });
+    canvasStore.addPreviewTab({ title: "X", children: [], url: "https://new.com", iframeId: "new", type: "replace" });
 
     const snapshot = canvasStore.getSnapshot();
     expect(snapshot.previewTabs).toHaveLength(1);

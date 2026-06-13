@@ -52,9 +52,19 @@ describe("canvasStore", () => {
       expect(snapshot.activeKey).toBe(snapshot.previewTabs[0].tabId);
     });
 
-    it("replaces preview tab with same title", () => {
+    it("appends preview tab with same title by default", () => {
       canvasStore.addPreviewTab({ title: "Device List", children: [] });
       canvasStore.addPreviewTab({ title: "Device List", children: [], url: "https://x.com", iframeId: "x" });
+
+      const snapshot = canvasStore.getSnapshot();
+      expect(snapshot.previewTabs).toHaveLength(2);
+      expect(snapshot.previewTabs[0].url).toBeUndefined();
+      expect(snapshot.previewTabs[1].url).toBe("https://x.com");
+    });
+
+    it("replaces preview tab with same title when type=replace", () => {
+      canvasStore.addPreviewTab({ title: "Device List", children: [], type: "replace" });
+      canvasStore.addPreviewTab({ title: "Device List", children: [], url: "https://x.com", iframeId: "x", type: "replace" });
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs).toHaveLength(1);

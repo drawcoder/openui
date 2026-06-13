@@ -25,6 +25,8 @@ kpiCard = Card([cardTitle, miniChart])
 cardTitle = TextContent("7-Day Latency", "large")
 miniChart = MiniChart("line", [45, 52, 38, 60, 55, 48, 42])`;
 
+const DEMO_DSL_PIU = `root = Piu("DemoPiu", eventName="click", destroy=false, param={"key": "value"})`;
+
 const DEMO_DSL_DESC = `root = Descriptions([field1, field2, field3])
 field1 = DescGroup("Server Info", [DescField("Host", "web-01.example.com"), DescField("IP", "10.0.1.42"), DescField("Status", data.devices[0].status)])
 field2 = DescGroup("Network", [DescField("Port", "443"), DescField("Protocol", "HTTPS")])
@@ -58,6 +60,7 @@ function App() {
 
   const handleAddPreviewCard = useCallback((dsl: string, title: string) => {
     const children = parseDslToChildren(dsl);
+    console.log('11111111111', children)
     if (children) {
       canvasStore.addPreviewTab({ title, children });
     }
@@ -139,6 +142,9 @@ function App() {
                 </button>
                 <button className="button-sm" onClick={() => handleAddPreviewCard(DEMO_DSL_KPI, "KPI Card")}>
                   KPI
+                </button>
+                <button className="button-sm" onClick={() => handleAddPreviewCard(DEMO_DSL_PIU, "Piu Demo")}>
+                  Piu
                 </button>
               </div>
 
