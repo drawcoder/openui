@@ -192,7 +192,7 @@ describe("PreviewCard + canvasStore integration", () => {
 
   it("PreviewCard pushes children to canvasStore as PreviewTab", () => {
     const children = [{ typeName: "Table", props: {} }];
-    canvasStore.addPreviewTab({
+    canvasStore.addPreviewCard({
       title: "Device List",
       children,
     });
@@ -204,7 +204,7 @@ describe("PreviewCard + canvasStore integration", () => {
   });
 
   it("PreviewCard with HTMLLoader children adds url/iframeId/data to tab", () => {
-    canvasStore.addPreviewTab({
+    canvasStore.addPreviewCard({
       title: "External Page",
       children: [],
       url: "https://example.com",
@@ -219,8 +219,8 @@ describe("PreviewCard + canvasStore integration", () => {
   });
 
   it("PreviewCard with tabId replaces when type=replace", () => {
-    canvasStore.addPreviewTab({ title: "X", children: [], tabId: "tab-x" });
-    canvasStore.addPreviewTab({ title: "X", children: [], url: "https://new.com", iframeId: "new", tabId: "tab-x", type: "replace" });
+    canvasStore.addPreviewCard({ title: "X", children: [], tabId: "tab-x" });
+    canvasStore.addPreviewCard({ title: "X", children: [], url: "https://new.com", iframeId: "new", tabId: "tab-x", type: "replace" });
 
     const snapshot = canvasStore.getSnapshot();
     expect(snapshot.previewTabs).toHaveLength(1);
@@ -228,8 +228,8 @@ describe("PreviewCard + canvasStore integration", () => {
   });
 
   it("PreviewCard with tabId appends children when type=append", () => {
-    canvasStore.addPreviewTab({ title: "X", children: [{ typeName: "Table" }], tabId: "tab-x" });
-    canvasStore.addPreviewTab({ title: "Extra", children: [{ typeName: "Chart" }], tabId: "tab-x" });
+    canvasStore.addPreviewCard({ title: "X", children: [{ typeName: "Table" }], tabId: "tab-x" });
+    canvasStore.addPreviewCard({ title: "Extra", children: [{ typeName: "Chart" }], tabId: "tab-x" });
 
     const snapshot = canvasStore.getSnapshot();
     expect(snapshot.previewTabs).toHaveLength(1);
@@ -237,8 +237,8 @@ describe("PreviewCard + canvasStore integration", () => {
   });
 
   it("PreviewCard with unknown tabId creates new tab", () => {
-    canvasStore.addPreviewTab({ title: "A", children: [], tabId: "tab-a" });
-    canvasStore.addPreviewTab({ title: "B", children: [], tabId: "tab-b" });
+    canvasStore.addPreviewCard({ title: "A", children: [], tabId: "tab-a" });
+    canvasStore.addPreviewCard({ title: "B", children: [], tabId: "tab-b" });
 
     const snapshot = canvasStore.getSnapshot();
     expect(snapshot.previewTabs).toHaveLength(2);
@@ -246,8 +246,8 @@ describe("PreviewCard + canvasStore integration", () => {
   });
 
   it("PreviewCard without tabId always creates new tab", () => {
-    canvasStore.addPreviewTab({ title: "X", children: [] });
-    canvasStore.addPreviewTab({ title: "X", children: [] });
+    canvasStore.addPreviewCard({ title: "X", children: [] });
+    canvasStore.addPreviewCard({ title: "X", children: [] });
 
     expect(canvasStore.getSnapshot().previewTabs).toHaveLength(2);
   });

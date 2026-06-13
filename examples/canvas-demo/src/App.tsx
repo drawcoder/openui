@@ -61,15 +61,15 @@ function App() {
   const handleAddPreviewCard = useCallback((dsl: string, title: string) => {
     const children = parseDslToChildren(dsl);
     if (children) {
-      canvasStore.addPreviewTab({ title, children });
+      canvasStore.addPreviewCard({ title, children });
     }
   }, []);
 
   const handleAddDashboardCard = useCallback(
-    (dsl: string, title: string, tab?: string, size?: { w?: number }) => {
+    (dsl: string, title: string, tabId?: string, size?: { w?: number }) => {
       const children = parseDslToChildren(dsl);
       if (children) {
-        canvasStore.addDashboardCard({ title, children, size }, tab);
+        canvasStore.addDashboardCard({ title, children, size }, tabId);
       }
     },
     []
@@ -77,7 +77,7 @@ function App() {
 
   const handleAddHtmlLoader = useCallback(
     (url: string, iframeId: string, title: string) => {
-      canvasStore.addPreviewTab({ title, children: [], url, iframeId });
+      canvasStore.addPreviewCard({ title, children: [], url, iframeId });
     },
     []
   );

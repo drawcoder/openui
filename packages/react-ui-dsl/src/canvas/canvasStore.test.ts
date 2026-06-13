@@ -42,9 +42,9 @@ describe("canvasStore", () => {
     });
   });
 
-  describe("addPreviewTab", () => {
+  describe("addPreviewCard", () => {
     it("adds a preview tab and switches activeKey", () => {
-      canvasStore.addPreviewTab({ title: "Device List", children: [] });
+      canvasStore.addPreviewCard({ title: "Device List", children: [] });
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs).toHaveLength(1);
@@ -53,16 +53,16 @@ describe("canvasStore", () => {
     });
 
     it("always creates new tab when no tabId provided", () => {
-      canvasStore.addPreviewTab({ title: "Device List", children: [] });
-      canvasStore.addPreviewTab({ title: "Device List", children: [], url: "https://x.com", iframeId: "x" });
+      canvasStore.addPreviewCard({ title: "Device List", children: [] });
+      canvasStore.addPreviewCard({ title: "Device List", children: [], url: "https://x.com", iframeId: "x" });
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs).toHaveLength(2);
     });
 
     it("replaces tab when tabId exists and type=replace", () => {
-      canvasStore.addPreviewTab({ title: "Device List", children: [], tabId: "device-tab" });
-      canvasStore.addPreviewTab({ title: "Device List", children: [], url: "https://x.com", iframeId: "x", tabId: "device-tab", type: "replace" });
+      canvasStore.addPreviewCard({ title: "Device List", children: [], tabId: "device-tab" });
+      canvasStore.addPreviewCard({ title: "Device List", children: [], url: "https://x.com", iframeId: "x", tabId: "device-tab", type: "replace" });
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs).toHaveLength(1);
@@ -71,8 +71,8 @@ describe("canvasStore", () => {
     });
 
     it("appends children to existing tab when tabId exists and type=append", () => {
-      canvasStore.addPreviewTab({ title: "Device List", children: [{ typeName: "Table" }], tabId: "device-tab" });
-      canvasStore.addPreviewTab({ title: "Extra", children: [{ typeName: "Chart" }], tabId: "device-tab" });
+      canvasStore.addPreviewCard({ title: "Device List", children: [{ typeName: "Table" }], tabId: "device-tab" });
+      canvasStore.addPreviewCard({ title: "Extra", children: [{ typeName: "Chart" }], tabId: "device-tab" });
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs).toHaveLength(1);
@@ -81,8 +81,8 @@ describe("canvasStore", () => {
     });
 
     it("creates new tab when tabId provided but not found", () => {
-      canvasStore.addPreviewTab({ title: "Device List", children: [], tabId: "device-tab" });
-      canvasStore.addPreviewTab({ title: "Network", children: [], tabId: "network-tab" });
+      canvasStore.addPreviewCard({ title: "Device List", children: [], tabId: "device-tab" });
+      canvasStore.addPreviewCard({ title: "Network", children: [], tabId: "network-tab" });
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs).toHaveLength(2);
@@ -90,15 +90,15 @@ describe("canvasStore", () => {
     });
 
     it("uses provided tabId when creating new tab", () => {
-      canvasStore.addPreviewTab({ title: "Device List", children: [], tabId: "my-custom-id" });
+      canvasStore.addPreviewCard({ title: "Device List", children: [], tabId: "my-custom-id" });
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs[0].tabId).toBe("my-custom-id");
     });
 
     it("adds multiple preview tabs with different titles", () => {
-      canvasStore.addPreviewTab({ title: "Tab A", children: [] });
-      canvasStore.addPreviewTab({ title: "Tab B", children: [] });
+      canvasStore.addPreviewCard({ title: "Tab A", children: [] });
+      canvasStore.addPreviewCard({ title: "Tab B", children: [] });
 
       expect(canvasStore.getSnapshot().previewTabs).toHaveLength(2);
     });
@@ -148,7 +148,7 @@ describe("canvasStore", () => {
 
     it("falls back to preview tab if no dashboard tabs with cards remain", () => {
       canvasStore.addDashboardCard({ title: "Card A", children: [] }, "Tab1");
-      canvasStore.addPreviewTab({ title: "Preview", children: [] });
+      canvasStore.addPreviewCard({ title: "Preview", children: [] });
 
       canvasStore.setActiveKey("dashboard-Tab1");
       canvasStore.removeDashboardTab("Tab1");
@@ -169,7 +169,7 @@ describe("canvasStore", () => {
 
   describe("removePreviewTab", () => {
     it("removes a preview tab by tabId", () => {
-      canvasStore.addPreviewTab({ title: "Tab A", children: [] });
+      canvasStore.addPreviewCard({ title: "Tab A", children: [] });
       const snapshot = canvasStore.getSnapshot();
       const tabId = snapshot.previewTabs[0].tabId;
 
@@ -180,7 +180,7 @@ describe("canvasStore", () => {
 
     it("switches activeKey away from removed tab", () => {
       canvasStore.addDashboardCard({ title: "Card A", children: [] });
-      canvasStore.addPreviewTab({ title: "Preview", children: [] });
+      canvasStore.addPreviewCard({ title: "Preview", children: [] });
       const snapshot = canvasStore.getSnapshot();
       const previewTabId = snapshot.previewTabs[0].tabId;
 
@@ -195,7 +195,7 @@ describe("canvasStore", () => {
     it("removes all tabs, preview tabs, and resets activeKey", () => {
       canvasStore.addDashboardCard({ title: "Card A", children: [] });
       canvasStore.addDashboardCard({ title: "Card B", children: [] }, "Network");
-      canvasStore.addPreviewTab({ title: "Preview", children: [] });
+      canvasStore.addPreviewCard({ title: "Preview", children: [] });
 
       canvasStore.clear();
 

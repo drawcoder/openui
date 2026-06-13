@@ -25,10 +25,10 @@ export interface CanvasStore {
   previewTabs: PreviewTabData[];
   activeKey: string;
   
-  addDashboardCard(card: Omit<DashboardCardData, "cardId">, tab?: string): string;
-  addPreviewTab(tab: Omit<PreviewTabData, "tabId"> & { tabId?: string; type?: "replace" | "append" }): void;
-  removeDashboardCard(tab: string, cardId: string): void;
-  removeDashboardTab(tab: string): void;
+  addDashboardCard(card: Omit<DashboardCardData, "cardId">, tabId?: string): string;
+  addPreviewCard(card: Omit<PreviewTabData, "tabId"> & { tabId?: string; type?: "replace" | "append" }): void;
+  removeDashboardCard(tabId: string, cardId: string): void;
+  removeDashboardTab(tabId: string): void;
   removePreviewTab(tabId: string): void;
   setActiveKey(key: string): void;
   clear(): void;
@@ -68,14 +68,14 @@ function createCanvasStoreInternal(): CanvasStore {
     previewTabs: state.previewTabs,
     activeKey: state.activeKey,
     
-    addDashboardCard(card, tab = "Dashboard"): string {
-      if (!state.tabs[tab]) {
-        state.tabs[tab] = [];
+    addDashboardCard(card, tabId = "Dashboard"): string {
+      if (!state.tabs[tabId]) {
+        state.tabs[tabId] = [];
       }
-      const existingIndex = state.tabs[tab].findIndex(c => c.title === card.title);
+      const existingIndex = state.tabs[tabId].findIndex(c => c.title === card.title);
       if (existingIndex >= 0) {
-        const existingCardId = state.tabs[tab][existingIndex].cardId;
-        state.tabs[tab][existingIndex] = {
+        const existingCardId = state.tabs[tabId][existingIndex].cardId;
+        state.tabs[tabId][existingIndex] = {
           ...card,
           cardId: existingCardId,
         };
@@ -83,65 +83,63 @@ function createCanvasStoreInternal(): CanvasStore {
         return existingCardId;
       }
       const cardId = generateCardId();
-      state.tabs[tab].push({
+      state.tabs[tabId].push({
         ...card,
         cardId,
       });
       if (!state.activeKey.startsWith("dashboard-")) {
-        state.activeKey = `dashboard-${tab}`;
+        state.activeKey = `dashboard-${tabId}`;
       }
       notify();
       return cardId;
     },
-    
-    addPreviewTab(tab): void {
-      const existingTabIndex = tab.tabId
-        ? state.previewTabs.findIndex(t => t.tabId === tab.tabId)
+    addPreviewCard(card): void {
+      const existingTabIndex = card.tabId
+        ? state.previewTabs.findIndex(t => t.tabId === card.tabId)
         : -1;
 
       if (existingTabIndex >= 0) {
-        if (tab.type === "replace") {
+        if (card.type === "replace") {
           state.previewTabs[existingTabIndex] = {
-            title: tab.title ?? state.previewTabs[existingTabIndex].title,
-            children: tab.children,
-            tabId: tab.tabId!,
-            url: tab.url ?? state.previewTabs[existingTabIndex].url,
-            iframeId: tab.iframeId ?? state.previewTabs[existingTabIndex].iframeId,
-            data: tab.data ?? state.previewTabs[existingTabIndex].data,
+            title: card.title ?? state.previewTabs[existingTabIndex].title,
+            children: card.children,
+            tabId: card.tabId!,
+            url: card.url ?? state.previewTabs[existingTabIndex].url,
+            iframeId: card.iframeId ?? state.previewTabs[existingTabIndex].iframeId,
+            data: card.data ?? state.previewTabs[existingTabIndex].data,
           };
         } else {
           state.previewTabs[existingTabIndex] = {
             ...state.previewTabs[existingTabIndex],
-            children: [...state.previewTabs[existingTabIndex].children, ...tab.children],
+            children: [...state.previewTabs[existingTabIndex].children, ...card.children],
           };
         }
-        state.activeKey = tab.tabId!;
+        state.activeKey = card.tabId!;
       } else {
-        const newTabId = tab.tabId ?? generateTabId();
+        const newTabId = card.tabId ?? generateTabId();
         const newTab: PreviewTabData = {
-          title: tab.title,
-          children: tab.children,
+          title: card.title,
+          children: card.children,
           tabId: newTabId,
-          url: tab.url,
-          iframeId: tab.iframeId,
-          data: tab.data,
+          url: card.url,
+          iframeId: card.iframeId,
+          data: card.data,
         };
         state.previewTabs.push(newTab);
         state.activeKey = newTabId;
       }
       notify();
     },
-    
-    removeDashboardCard(tab, cardId): void {
-      if (state.tabs[tab]) {
-        state.tabs[tab] = state.tabs[tab].filter(c => c.cardId !== cardId);
+    removeDashboardCard(tabId, cardId): void {
+      if (state.tabs[tabId]) {
+        state.tabs[tabId] = state.tabs[tabId].filter(c => c.cardId !== cardId);
         notify();
       }
     },
     
-    removeDashboardTab(tab): void {
-      delete state.tabs[tab];
-      if (state.activeKey === `dashboard-${tab}`) {
+    removeDashboardTab(tabId): void {
+      delete state.tabs[tabId];
+      if (state.activeKey === `dashboard-${tabId}`) {
         const firstRemaining = Object.keys(state.tabs).find(k => state.tabs[k].length > 0);
         if (firstRemaining) {
           state.activeKey = `dashboard-${firstRemaining}`;

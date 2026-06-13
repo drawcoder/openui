@@ -21,9 +21,9 @@ export const CanvasCard = defineComponent({
 
     useEffect(() => {
       const prevCardId = cardIdRef.current;
-      const tab = props.tab ?? "Dashboard";
+      const tabId = props.tab ?? "Dashboard";
       if (prevCardId) {
-        canvasStore.removeDashboardCard(tab, prevCardId);
+        canvasStore.removeDashboardCard(tabId, prevCardId);
       }
       const cardId = canvasStore.addDashboardCard(
         {
@@ -31,13 +31,13 @@ export const CanvasCard = defineComponent({
           children: props.children,
           size: props.size,
         },
-        tab
+        tabId
       );
       cardIdRef.current = cardId;
 
       return () => {
         if (cardIdRef.current) {
-          canvasStore.removeDashboardCard(tab, cardIdRef.current);
+          canvasStore.removeDashboardCard(tabId, cardIdRef.current);
           cardIdRef.current = null;
         }
       };
