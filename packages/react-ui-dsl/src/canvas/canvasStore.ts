@@ -12,7 +12,6 @@ export interface PreviewTabData {
   url?: string;
   iframeId?: string;
   data?: Record<string, unknown>;
-  type?: "replace" | "append";
 }
 
 export interface CanvasStoreState {
@@ -27,7 +26,7 @@ export interface CanvasStore {
   activeKey: string;
   
   addDashboardCard(card: Omit<DashboardCardData, "cardId">, tab?: string): string;
-  addPreviewTab(tab: Omit<PreviewTabData, "tabId">): void;
+  addPreviewTab(tab: Omit<PreviewTabData, "tabId"> & { tabId?: string; type?: "replace" | "append" }): void;
   removeDashboardCard(tab: string, cardId: string): void;
   removeDashboardTab(tab: string): void;
   removePreviewTab(tabId: string): void;
@@ -96,21 +95,40 @@ function createCanvasStoreInternal(): CanvasStore {
     },
     
     addPreviewTab(tab): void {
-      const newTab: PreviewTabData = {
-        ...tab,
-        tabId: generateTabId(),
-      };
-      if (tab.type === "replace") {
-        const existingIndex = state.previewTabs.findIndex(t => t.title === tab.title);
-        if (existingIndex >= 0) {
-          state.previewTabs[existingIndex] = newTab;
+      const existingTabIndex = tab.tabId
+        ? state.previewTabs.findIndex(t => t.tabId === tab.tabId)
+        : -1;
+
+      if (existingTabIndex >= 0) {
+        if (tab.type === "replace") {
+          state.previewTabs[existingTabIndex] = {
+            title: tab.title ?? state.previewTabs[existingTabIndex].title,
+            children: tab.children,
+            tabId: tab.tabId!,
+            url: tab.url ?? state.previewTabs[existingTabIndex].url,
+            iframeId: tab.iframeId ?? state.previewTabs[existingTabIndex].iframeId,
+            data: tab.data ?? state.previewTabs[existingTabIndex].data,
+          };
         } else {
-          state.previewTabs.push(newTab);
+          state.previewTabs[existingTabIndex] = {
+            ...state.previewTabs[existingTabIndex],
+            children: [...state.previewTabs[existingTabIndex].children, ...tab.children],
+          };
         }
+        state.activeKey = tab.tabId!;
       } else {
+        const newTabId = tab.tabId ?? generateTabId();
+        const newTab: PreviewTabData = {
+          title: tab.title,
+          children: tab.children,
+          tabId: newTabId,
+          url: tab.url,
+          iframeId: tab.iframeId,
+          data: tab.data,
+        };
         state.previewTabs.push(newTab);
+        state.activeKey = newTabId;
       }
-      state.activeKey = newTab.tabId;
       notify();
     },
     

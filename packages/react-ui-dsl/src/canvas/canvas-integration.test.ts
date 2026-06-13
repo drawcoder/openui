@@ -83,6 +83,18 @@ describe("PreviewCard schema", () => {
     }
   });
 
+  it("accepts optional tabId", () => {
+    const result = PreviewCardSchema.safeParse({
+      children: [],
+      title: "Preview",
+      tabId: "my-tab",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.tabId).toBe("my-tab");
+    }
+  });
+
   it("rejects unknown props", () => {
     expect(PreviewCardSchema.safeParse({ children: [], title: "X", url: "bad" }).success).toBe(false);
   });
@@ -206,20 +218,37 @@ describe("PreviewCard + canvasStore integration", () => {
     expect(snapshot.previewTabs[0].data).toEqual({ theme: "dark" });
   });
 
-  it("PreviewCard with same title appends by default", () => {
-    canvasStore.addPreviewTab({ title: "X", children: [] });
-    canvasStore.addPreviewTab({ title: "X", children: [], url: "https://new.com", iframeId: "new" });
-
-    const snapshot = canvasStore.getSnapshot();
-    expect(snapshot.previewTabs).toHaveLength(2);
-  });
-
-  it("PreviewCard with same title replaces when type=replace", () => {
-    canvasStore.addPreviewTab({ title: "X", children: [], type: "replace" });
-    canvasStore.addPreviewTab({ title: "X", children: [], url: "https://new.com", iframeId: "new", type: "replace" });
+  it("PreviewCard with tabId replaces when type=replace", () => {
+    canvasStore.addPreviewTab({ title: "X", children: [], tabId: "tab-x" });
+    canvasStore.addPreviewTab({ title: "X", children: [], url: "https://new.com", iframeId: "new", tabId: "tab-x", type: "replace" });
 
     const snapshot = canvasStore.getSnapshot();
     expect(snapshot.previewTabs).toHaveLength(1);
     expect(snapshot.previewTabs[0].url).toBe("https://new.com");
+  });
+
+  it("PreviewCard with tabId appends children when type=append", () => {
+    canvasStore.addPreviewTab({ title: "X", children: [{ typeName: "Table" }], tabId: "tab-x" });
+    canvasStore.addPreviewTab({ title: "Extra", children: [{ typeName: "Chart" }], tabId: "tab-x" });
+
+    const snapshot = canvasStore.getSnapshot();
+    expect(snapshot.previewTabs).toHaveLength(1);
+    expect(snapshot.previewTabs[0].children).toHaveLength(2);
+  });
+
+  it("PreviewCard with unknown tabId creates new tab", () => {
+    canvasStore.addPreviewTab({ title: "A", children: [], tabId: "tab-a" });
+    canvasStore.addPreviewTab({ title: "B", children: [], tabId: "tab-b" });
+
+    const snapshot = canvasStore.getSnapshot();
+    expect(snapshot.previewTabs).toHaveLength(2);
+    expect(snapshot.previewTabs[1].tabId).toBe("tab-b");
+  });
+
+  it("PreviewCard without tabId always creates new tab", () => {
+    canvasStore.addPreviewTab({ title: "X", children: [] });
+    canvasStore.addPreviewTab({ title: "X", children: [] });
+
+    expect(canvasStore.getSnapshot().previewTabs).toHaveLength(2);
   });
 });

@@ -6,6 +6,7 @@ export const PreviewCardSchema = z
     title: z.string(),
     summary: z.array(z.any()).optional(),
     type: z.enum(["replace", "append"]).default("append"),
+    tabId: z.string().optional(),
   })
   .strict();
 

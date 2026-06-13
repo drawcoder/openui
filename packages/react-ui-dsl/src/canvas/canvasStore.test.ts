@@ -52,23 +52,48 @@ describe("canvasStore", () => {
       expect(snapshot.activeKey).toBe(snapshot.previewTabs[0].tabId);
     });
 
-    it("appends preview tab with same title by default", () => {
+    it("always creates new tab when no tabId provided", () => {
       canvasStore.addPreviewTab({ title: "Device List", children: [] });
       canvasStore.addPreviewTab({ title: "Device List", children: [], url: "https://x.com", iframeId: "x" });
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs).toHaveLength(2);
-      expect(snapshot.previewTabs[0].url).toBeUndefined();
-      expect(snapshot.previewTabs[1].url).toBe("https://x.com");
     });
 
-    it("replaces preview tab with same title when type=replace", () => {
-      canvasStore.addPreviewTab({ title: "Device List", children: [], type: "replace" });
-      canvasStore.addPreviewTab({ title: "Device List", children: [], url: "https://x.com", iframeId: "x", type: "replace" });
+    it("replaces tab when tabId exists and type=replace", () => {
+      canvasStore.addPreviewTab({ title: "Device List", children: [], tabId: "device-tab" });
+      canvasStore.addPreviewTab({ title: "Device List", children: [], url: "https://x.com", iframeId: "x", tabId: "device-tab", type: "replace" });
 
       const snapshot = canvasStore.getSnapshot();
       expect(snapshot.previewTabs).toHaveLength(1);
+      expect(snapshot.previewTabs[0].tabId).toBe("device-tab");
       expect(snapshot.previewTabs[0].url).toBe("https://x.com");
+    });
+
+    it("appends children to existing tab when tabId exists and type=append", () => {
+      canvasStore.addPreviewTab({ title: "Device List", children: [{ typeName: "Table" }], tabId: "device-tab" });
+      canvasStore.addPreviewTab({ title: "Extra", children: [{ typeName: "Chart" }], tabId: "device-tab" });
+
+      const snapshot = canvasStore.getSnapshot();
+      expect(snapshot.previewTabs).toHaveLength(1);
+      expect(snapshot.previewTabs[0].children).toHaveLength(2);
+      expect(snapshot.previewTabs[0].title).toBe("Device List");
+    });
+
+    it("creates new tab when tabId provided but not found", () => {
+      canvasStore.addPreviewTab({ title: "Device List", children: [], tabId: "device-tab" });
+      canvasStore.addPreviewTab({ title: "Network", children: [], tabId: "network-tab" });
+
+      const snapshot = canvasStore.getSnapshot();
+      expect(snapshot.previewTabs).toHaveLength(2);
+      expect(snapshot.previewTabs[1].tabId).toBe("network-tab");
+    });
+
+    it("uses provided tabId when creating new tab", () => {
+      canvasStore.addPreviewTab({ title: "Device List", children: [], tabId: "my-custom-id" });
+
+      const snapshot = canvasStore.getSnapshot();
+      expect(snapshot.previewTabs[0].tabId).toBe("my-custom-id");
     });
 
     it("adds multiple preview tabs with different titles", () => {
