@@ -12,6 +12,7 @@ export interface PreviewTabData {
   url?: string;
   iframeId?: string;
   data?: Record<string, unknown>;
+  type?: "replace" | "append";
 }
 
 export interface CanvasStoreState {
@@ -95,13 +96,17 @@ function createCanvasStoreInternal(): CanvasStore {
     },
     
     addPreviewTab(tab): void {
-      const existingIndex = state.previewTabs.findIndex(t => t.title === tab.title);
       const newTab: PreviewTabData = {
         ...tab,
         tabId: generateTabId(),
       };
-      if (existingIndex >= 0) {
-        state.previewTabs[existingIndex] = newTab;
+      if (tab.type === "replace") {
+        const existingIndex = state.previewTabs.findIndex(t => t.title === tab.title);
+        if (existingIndex >= 0) {
+          state.previewTabs[existingIndex] = newTab;
+        } else {
+          state.previewTabs.push(newTab);
+        }
       } else {
         state.previewTabs.push(newTab);
       }
