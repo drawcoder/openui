@@ -68,7 +68,8 @@ export { canvasStore } from "./canvas/canvasStore";
 export type {
   CanvasStore,
   CanvasStoreState,
-  DashboardCardData,
+  CanvasCardData,
+  PreviewCardData,
   PreviewTabData,
 } from "./canvas/canvasStore";
 

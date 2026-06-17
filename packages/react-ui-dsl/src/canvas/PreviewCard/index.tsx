@@ -26,7 +26,7 @@ export const PreviewCard = defineComponent({
   name: "PreviewCard",
   props: PreviewCardSchema,
   description:
-    'Preview card that shows a small card in LUI. Click adds full content to canvas PreviewTab. Args: children (required, full preview content or HTMLLoader), title (required, tab name), summary (optional, summary content shown in LUI small card), type (optional, "replace" or "append", default "append"), tabId (optional, target tab identifier). If tabId exists: type="replace" replaces that tab, type="append" merges children into it. If tabId absent or not found: creates a new tab. HTMLLoader children will render as iframe with bidirectional communication.',
+    'Preview card that shows a small card in LUI. Click adds full content to canvas PreviewTab. Args: children (required, full preview content or HTMLLoader), title (required, tab name), summary (optional, summary content shown in LUI small card), type (optional, "replace" or "append", default "append"), tabId (optional, target tab identifier), cardId (optional, card unique identifier for deduplication). If tabId exists: type="replace" replaces card with same cardId or adds new card; type="append" always adds a new card to the tab. If tabId absent or not found: creates a new tab. HTMLLoader children will render as iframe with bidirectional communication.',
   component: ({
     props,
     renderNode,
@@ -40,6 +40,7 @@ export const PreviewCard = defineComponent({
           url: loaderInfo?.url,
           iframeId: loaderInfo?.iframeId,
           data: loaderInfo?.data,
+          cardId: props.cardId,
         },
         props.tabId,
         props.type,
